@@ -21,6 +21,10 @@ int main(){
         exit(1);
     }
 
+    // If connected, start sending and receiving data
+    cout << "[\033[1;36mStatus\033[0m] Connected to the server" << endl;
+    cout << "[\033[1;33mNew connection\033[0m][\033[1mServer IP\033[0m] " << SERVER_IP << endl;
+    cout << "[\033[1;33mNew connection\033[0m][\033[1mServer Port\033[0m] " << SERVER_PORT << endl;
     // receive data from the server
     char buffer[4096];
     bzero(buffer, 4096);
@@ -29,6 +33,10 @@ int main(){
         string client_message;
         cout << "Type the message you want to send to server: ";
         getline(cin, client_message);
+        if(client_message == "exit"){
+            cout << "[\033[1;36mStatus\033[0m] Closing the connection" << endl;
+            break;
+        }
         cout << "[\033[1mClient\033[0m] " << client_message << endl;
 
         // Send the message to the server
@@ -39,7 +47,7 @@ int main(){
             cout << "[\033[1;31mError\033[0m] In receiving data" << endl;
             break;
         }
-        cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+        cout << "[\033[1;32mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
     }
 
     return 0;

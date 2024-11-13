@@ -41,26 +41,37 @@ int main(){
 
     while(1){
         // accept the call
-        int newSocket = accept(server_fd, (struct sockaddr*)&accept_address, &accept_addressSize);
-        cout << "[\033[1;33mNew connection\033[0m][\033[1mIP\033[0m] " << inet_ntoa(accept_address.sin_addr) << endl;
-        cout << "[\033[1;33mNew connection\033[0m][\033[1mPort\033[0m] " << ntohs(accept_address.sin_port) << endl;
+        int new_fd = accept(server_fd, (struct sockaddr*)&accept_address, &accept_addressSize);
+        if(new_fd < 0){
+            cout << "[\033[1;31mError\033[0m] Accepting connection" << endl;
+            continue;
+        }
+        cout << "[\033[1;33mNew connection\033[0m][\033[1mClient IP\033[0m] " << inet_ntoa(accept_address.sin_addr) << endl;
+        cout << "[\033[1;33mNew connection\033[0m][\033[1mClient Port\033[0m] " << ntohs(accept_address.sin_port) << endl;
 
         while(1){
             char buffer[4096];
             bzero(buffer, 4096);
 
             // receive a message
-            int bytes_received = recv(newSocket, buffer, 4096, 0);
-            if(bytes_received < 0){
-                cout << "[\033[1;31mError\033[0m] in receiving data" << endl;
-                break;
+            int bytes_received = recv(new_fd, buffer, 4096, 0);
+            if(bytes_received <= 0){
+                if(bytes_received == 0){
+                    // client disconnected
+                    cout << "[\033[1;36mStatus\033[0m] Client disconnected" << endl;
+                    cout << "[\033[1;36mStatus\033[0m] Server is listening..." << endl;
+                } else {
+                    cout << "[\033[1;31mError\033[0m] In receiving data" << endl;
+                }
+                break; // break the loop
             }
-            cout << "Client: " << string(buffer, 0, bytes_received) << endl;
+            cout << "[\033[1mClient\033[0m] " << string(buffer, 0, bytes_received) << endl;
 
             // send back to client a message
             string message = "Server received the message";
-            send(newSocket, message.c_str(), message.size() + 1, 0);
+            send(new_fd, message.c_str(), message.size() + 1, 0);
         }
+        close(new_fd);
     }
     close(server_fd);
 
