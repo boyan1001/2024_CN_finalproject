@@ -1,11 +1,21 @@
 #include "client.h"
+#include "UI.h"
 
 int main(){
+    system("clear");
+
+    // print title
+    title(1);
+    clientWelcome();
+    system("clear");
+
+    title(1);
+
     // Create a socket
     int client_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     if(client_fd == -1){
-        cout << "[\033[1;31mError\033[0m] Creating a socket" << endl;
+        printError("Creating a socket");
         exit(1);
     }
 
@@ -17,12 +27,12 @@ int main(){
 
     int connection_status = connect(client_fd, (struct sockaddr*)&server_address, sizeof(server_address));
     if(connection_status == -1){
-        cout << "[\033[1;31mError\033[0m] In connecting to the server" << endl;
+        printError("Connecting to the server");
         exit(1);
     }
 
     // If connected, start sending and receiving data
-    cout << "[\033[1;36mStatus\033[0m] Connected to the server" << endl;
+    cout << "[\033[1;36mStatus\033[0m] Connected to the server..." << endl;
     cout << "[\033[1;33mNew connection\033[0m][\033[1mServer IP\033[0m] " << SERVER_IP << endl;
     cout << "[\033[1;33mNew connection\033[0m][\033[1mServer Port\033[0m] " << SERVER_PORT << endl;
     // receive data from the server
@@ -44,7 +54,7 @@ int main(){
 
         int bytes_received = recv(client_fd, buffer, 4096, 0);
         if(bytes_received < 0){
-            cout << "[\033[1;31mError\033[0m] In receiving data" << endl;
+            printError("Receiving data from the server");
             break;
         }
         cout << "[\033[1;32mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;

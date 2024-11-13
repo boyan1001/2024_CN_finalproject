@@ -10,4 +10,6 @@
 #define SERVER_PORT 5000
 #define SERVER_IP "0.0.0.0"
 
+#pragma once
+
 using namespace std;

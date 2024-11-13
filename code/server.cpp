@@ -1,17 +1,28 @@
 #include "server.h"
+#include "UI.h"
 
 int main(){
+    system("clear");
+
+    // print title
+    title(0);
+    serverWelcome();
+    system("clear");
+
+    title(0);
+
+
     // create a socket
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(server_fd == -1){
-        cout << "[\033[1;31mError\033[0m] Creating a socket" << endl;
+        printError("Creating a socket");
         exit(1);
     }
 
     // check if address already in use
     int on = 1;
     if(setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0){
-        cout << "[\033[1;31mError\033[0m] Setting socket options" << endl;
+        printError("Setting socket options");
         exit(1);
     }
     
@@ -24,14 +35,14 @@ int main(){
     server_address.sin_addr.s_addr = inet_addr(SERVER_IP);
 
     if(bind(server_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0){
-        cout << "[\033[1;31mError\033[0m] Binding the socket to the IP" << endl;
+        printError("Binding the socket to an IP / port");
         exit(1);
     }
 
     // listen for connections
     int listening = listen(server_fd, 5);
     if(listening < 0){
-        cout << "[\033[1;31mError\033[0m] Listening" << endl;
+        printError("Listening for connections");
         exit(1);
     }
     cout << "[\033[1;36mStatus\033[0m] Server is listening..." << endl;
@@ -43,7 +54,7 @@ int main(){
         // accept the call
         int new_fd = accept(server_fd, (struct sockaddr*)&accept_address, &accept_addressSize);
         if(new_fd < 0){
-            cout << "[\033[1;31mError\033[0m] Accepting connection" << endl;
+            printError("Accepting the call");
             continue;
         }
         cout << "[\033[1;33mNew connection\033[0m][\033[1mClient IP\033[0m] " << inet_ntoa(accept_address.sin_addr) << endl;
@@ -61,7 +72,7 @@ int main(){
                     cout << "[\033[1;36mStatus\033[0m] Client disconnected" << endl;
                     cout << "[\033[1;36mStatus\033[0m] Server is listening..." << endl;
                 } else {
-                    cout << "[\033[1;31mError\033[0m] In receiving data" << endl;
+                    printError("Receiving data from the client");
                 }
                 break; // break the loop
             }
