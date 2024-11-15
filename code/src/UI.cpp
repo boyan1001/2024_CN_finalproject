@@ -35,7 +35,7 @@ void clientWelcome(){
     return;
 }
 
-string clientMainMenu(string username){
+string clientMainMenu(string username, int mode){
     string choice;
 
     cout << endl;
@@ -44,7 +44,12 @@ string clientMainMenu(string username){
 
     cout << "Press the key to choose the operation you want to do:" << endl;
     cout << "   0: User Registration" << endl;
-    cout << "   1: User Login" << endl;
+
+    if(mode == 0){
+        cout << "   1: User Login" << endl;
+    }else{
+        cout << "   2: User Logout" << endl;
+    }
     cout << "   R: Exit" << endl;
     cout << endl;
     cout << "Your choice: ";

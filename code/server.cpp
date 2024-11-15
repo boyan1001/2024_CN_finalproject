@@ -173,6 +173,22 @@ int main(int argc, char *argv[]){
                     cout << "[\033[1mServer\033[0m]" << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
                 }
+            }else if(string(buffer, 0, bytes_received).find("[User Logout]") != string::npos){
+                // User Logout
+                cout << "[\033[1;33mUser Logout\033[0m]" << endl;
+                
+                // check if the user is logined
+                string message;
+                if(login_user.username.empty()){
+                    message = "[\033[1;31mError\033[0m] Not Logined";
+                }else{
+                    login_user = User();
+                    message = "[\033[1;32mSuccess\033[0m] User logged out successfully";
+                }
+
+                cout << "[\033[1mServer\033[0m]" << message << endl;
+                send(new_fd, message.c_str(), message.size() + 1, 0);
+
             }else if(string(buffer, 0, bytes_received).find("[Info]") != string::npos){
                 // get info
                 if(string(buffer, 0, bytes_received).find("Get Username") != string::npos){

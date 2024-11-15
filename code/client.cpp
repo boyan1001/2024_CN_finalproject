@@ -50,7 +50,12 @@ int main(int argc, char *argv[]){
     string username = getNowUsername(client_fd);
 
     while(1){
-        string choice = clientMainMenu(username);
+        string choice;
+        if(username.empty()){
+            choice = clientMainMenu(username, 0);
+        }else{
+            choice = clientMainMenu(username, 1);
+        }
         string client_message;
 
         if(choice == "R"){
@@ -102,7 +107,7 @@ int main(int argc, char *argv[]){
                 int bytes_received = recv(client_fd, buffer, 4096, 0);
                 if(bytes_received < 0){
                     printError("Receiving data from the server");
-                    break;
+                    continue;
                 }
 
                 // check if the user is logined
@@ -112,8 +117,37 @@ int main(int argc, char *argv[]){
                 cout << endl;
                 cout << "Press ENTER to continue" << endl;
                 cin.get();
+                
+                if(string(buffer, 0, bytes_received).find("[\033[1;32mSuccess\033[0m]") != string::npos){
+                    break;
+                }
+            }
+        }else if(choice == "2"){
+            // User Logout
+            client_message = "[User Logout]";
+            if(client_message.empty()){
+                cout << "Press ENTER to continue" << endl;
+                cin.get();
+                continue;
+            }
+
+            // send to server
+            send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
+
+            // receive from server
+            int bytes_received = recv(client_fd, buffer, 4096, 0);
+            if(bytes_received < 0){
+                printError("Receiving data from the server");
                 break;
             }
+
+            // check if the user is logined
+            username = getNowUsername(client_fd);
+
+            cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+            cout << endl;
+            cout << "Press ENTER to continue" << endl;
+            cin.get();
         }else{
             printError("Invalid choice");
             cout << endl;

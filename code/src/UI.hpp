@@ -12,6 +12,6 @@ void serverWelcome();
 
 void clientWelcome();
 
-string clientMainMenu(string username);
+string clientMainMenu(string username, int mode);
 
 void statusMessage(string username);
