@@ -129,9 +129,7 @@ int main(int argc, char *argv[]){
                 cout << ">>> Press ENTER to continue" << endl;
                 cin.get();
                 
-                if(string(buffer, 0, bytes_received).find("[\033[1;32mSuccess\033[0m]") != string::npos){
-                    break;
-                }
+                break;
             }
         }else if(choice == "2"){
             // User Logout
@@ -202,8 +200,8 @@ string userRegistration(string username){
         return "";
     }
 
-    if(account.username.find(":") != string::npos || account.password.find(":") != string::npos){
-        printError("Username or password cannot contain ':'");
+    if(account.username.find(":") != string::npos || account.password.find(":") != string::npos || account.username.find(" ") != string::npos || account.password.find(" ") != string::npos){
+        printError("Username or password cannot contain ':' and space");
         return "";
     }
 

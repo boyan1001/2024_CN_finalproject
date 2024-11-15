@@ -2,7 +2,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <bits/stdc++.h>
 #include <fstream>
 #include <sstream>
