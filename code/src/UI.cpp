@@ -35,16 +35,32 @@ void clientWelcome(){
     return;
 }
 
-string clientMainMenu(){
+string clientMainMenu(string username){
     string choice;
+
     cout << endl;
+    statusMessage(username);
+    cout << endl;
+
     cout << "Press the key to choose the operation you want to do:" << endl;
     cout << "   0: User Registration" << endl;
     cout << "   1: User Login" << endl;
     cout << "   R: Exit" << endl;
     cout << endl;
     cout << "Your choice: ";
+
     getline(cin, choice);
+
     cout << endl;
     return choice;
+}
+
+void statusMessage(string username){
+    if(username.empty()){
+        cout << "[\033[1mUser Account Status\033[0m] \033[1;31mNot Logined\033[0m" << endl;
+        return;
+    }
+    cout << "[\033[1mUser Account Status\033[0m] \033[1;32mLogined\033[0m" << endl;
+    cout << "[\033[1mUsername\033[0m] " << username << endl;
+    return;
 }

@@ -46,9 +46,11 @@ int main(int argc, char *argv[]){
     // receive data from the server
     char buffer[4096];
     bzero(buffer, 4096);
+    
+    string username;
 
     while(1){
-        string choice = clientMainMenu();
+        string choice = clientMainMenu(username);
         string client_message;
 
         if(choice == "R"){
@@ -60,7 +62,7 @@ int main(int argc, char *argv[]){
             // User Registration
             while(1){
                 // enter data
-                client_message = userRegistration();
+                client_message = userRegistration(username);
                 if(client_message.empty()){
                     cout << "Press ENTER to continue" << endl;
                     cin.get();
@@ -76,7 +78,7 @@ int main(int argc, char *argv[]){
                     printError("Receiving data from the server");
                     break;
                 }
-                cout << "[\033[1;32mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+                cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
                 cout << endl;
                 cout << "Press ENTER to continue" << endl;
                 cin.get();
@@ -84,7 +86,36 @@ int main(int argc, char *argv[]){
             }
         }else if(choice == "1"){
             // User Login
-            
+            while(1){
+                // enter data
+                client_message = UserLogin(username);
+                if(client_message.empty()){
+                    cout << "Press ENTER to continue" << endl;
+                    cin.get();
+                    continue;
+                }
+
+                // send to server
+                send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
+
+                // receive from server
+                int bytes_received = recv(client_fd, buffer, 4096, 0);
+                if(bytes_received < 0){
+                    printError("Receiving data from the server");
+                    break;
+                }
+
+                // check if the user is logined
+                if(string(buffer, 0, bytes_received).find("[\033[1;31mError\033[0m]") != string::npos){
+                    username = "";
+                }
+
+                cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+                cout << endl;
+                cout << "Press ENTER to continue" << endl;
+                cin.get();
+                break;
+            }
         }else{
             printError("Invalid choice");
             cout << endl;
@@ -103,18 +134,21 @@ int main(int argc, char *argv[]){
         //     printError("Receiving data from the server");
         //     break;
         // }
-        // cout << "[\033[1;32mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+        // cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
     }
 
     close(client_fd);
     return 0;
 }
 
-string userRegistration(){
+string userRegistration(string username){
     User account;
     string message;
 
     cout << endl;
+    statusMessage(username);
+    cout << endl;
+
     cout << "Please enter your \033[1musername\033[0m: ";
     getline(cin, account.username);
     cout << "Please enter your \033[1mpassword\033[0m: ";
@@ -132,5 +166,35 @@ string userRegistration(){
     }
 
     message = "[User Registration] " + account.username + ":" + account.password;
+    return message;
+}
+
+string UserLogin(string &username){
+    User account;
+    string message;
+
+    cout << endl;
+    statusMessage(username);
+    cout << endl;
+
+    cout << "Please enter your \033[1musername\033[0m: ";
+    getline(cin, account.username);
+    cout << "Please enter your \033[1mpassword\033[0m: ";
+    getline(cin, account.password);
+    cout << endl;
+
+    if(account.username.empty() || account.password.empty()){
+        printError("Username or password cannot be empty");
+        return "";
+    }
+
+    if(account.username.find(":") != string::npos || account.password.find(":") != string::npos){
+        printError("Username or password cannot contain ':'");
+        return "";
+    }
+
+    message = "[User Login] " + account.username + ":" + account.password;
+
+    username = account.username;
     return message;
 }

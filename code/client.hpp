@@ -16,4 +16,6 @@ typedef struct{
     string password;
 }User;
 
-string userRegistration();
+string userRegistration(string username);
+
+string UserLogin(string &username);

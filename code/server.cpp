@@ -85,27 +85,30 @@ int main(int argc, char *argv[]){
             }
             cout << "[\033[1mClient\033[0m] " << string(buffer, 0, bytes_received) << endl;
 
-            // User Registration
             if(string(buffer, 0, bytes_received).find("[User Registration]") != string::npos){
+                // User Registration
                 // get username and pwd
                 User account;
-                account.username = string(buffer, 20, string(buffer, 20, bytes_received).find(":"));
-                account.password = string(buffer, 20 + string(buffer, 20, bytes_received).find(":") + 1, bytes_received - 20 - string(buffer, 20, bytes_received).find(":") - 1);
-                
+                int gap = 20;
+                account.username = string(buffer, gap, string(buffer, gap, bytes_received).find(":"));
+                account.password = string(buffer, gap + string(buffer, gap, bytes_received).find(":") + 1, bytes_received - gap - string(buffer, gap, bytes_received).find(":") - 1);
+                cout << "[\033[1;33mUser Registration\033[0m][\033[1mUsername\033[0m] " << account.username << endl;
+                cout << "[\033[1;33mUser Registration\033[0m][\033[1mPassword\033[0m] " << account.password << endl;
+
                 // find if the user already exists
                 ifstream file("./data/account.csv");
                 string line;
-                bool userExists = false;
+                bool user_exist = false;
                 getline(file, line); // skip the first line
                 while(getline(file, line)){
                     if(line.find(account.username) != string::npos){
-                        userExists = true;
+                        user_exist = true;
                         break;
                     }
                 }
 
                 // send back to client a message and regigster the user
-                if(userExists){
+                if(user_exist){
                     string message = "[\033[1;31mError\033[0m] User already exists";
                     cout << "[\033[1;32mServer\033[0m]" << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
@@ -113,12 +116,57 @@ int main(int argc, char *argv[]){
                     ofstream file("./data/account.csv", ios::app);
                     file << account.username << "," << account.password << endl;
 
-                    string message = "User registered successfully";
-                    cout << "[\033[1;32mServer\033[0m] " << message << endl;
+                    string message = "[\033[1;32mSuccess\033[0m] User registered successfully";
+                    cout << "[\033[1;32mServer\033[0m]" << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
                 }
 
                 file.close();
+            }else if(string(buffer, 0, bytes_received).find("[User Login]") != string::npos){
+                // User Login
+                // get username and pwd
+                User account;
+                int gap = 13;
+                account.username = string(buffer, gap, string(buffer, gap, bytes_received).find(":"));
+                account.password = string(buffer, gap + string(buffer, gap, bytes_received).find(":") + 1, bytes_received - gap - string(buffer, gap, bytes_received).find(":") - 1);
+                cout << "[\033[1;33mUser Login\033[0m][\033[1mUsername\033[0m] " << account.username << endl;
+                cout << "[\033[1;33mUser Login\033[0m][\033[1mPassword\033[0m] " << account.password << endl;
+
+                // find if the user exists
+                ifstream file("./data/account.csv");
+                string line;
+                bool user_exist = false;
+                bool login_access = false;
+                getline(file, line); // skip the first line
+                while(getline(file, line)){
+                    string uname = line.substr(0, line.find(","));
+                    string pwd = line.substr(line.find(",") + 1);
+                    if(uname == account.username){
+                        user_exist = true;
+                        if(pwd == account.password){
+                            login_access = true;
+                        }
+                        break;
+                    }
+                }
+
+                cout << "[\033[1;33mUser Login\033[0m][\033[1mUser Exist\033[0m] " << user_exist << endl;
+                cout << "[\033[1;33mUser Login\033[0m][\033[1mLogin Access\033[0m] " << login_access << endl;
+
+                // check
+                if(!user_exist){
+                    string message = "[\033[1;31mError\033[0m] User does not exist";
+                    cout << "[\033[1;32mServer\033[0m] " << message << endl;
+                    send(new_fd, message.c_str(), message.size() + 1, 0);
+                }else if(!login_access){
+                    string message = "[\033[1;31mError\033[0m] Incorrect password";
+                    cout << "[\033[1;32mServer\033[0m] " << message << endl;
+                    send(new_fd, message.c_str(), message.size() + 1, 0);
+                }else{
+                    string message = "[\033[1;32mSuccess\033[0m] User logged in successfully";
+                    cout << "[\033[1;32mServer\033[0m]" << message << endl;
+                    send(new_fd, message.c_str(), message.size() + 1, 0);
+                }
             }else{
                 // send back to client a message
                 string message = "Server received the message";
