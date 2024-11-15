@@ -6,8 +6,6 @@
 #include <fstream>
 #include <sstream>
 
-#define SERVER_IP "127.0.0.1"
-
 #pragma once
 
 using namespace std;

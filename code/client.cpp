@@ -39,9 +39,14 @@ int main(int argc, char *argv[]){
     }
 
     // If connected, start sending and receiving data
-    cout << "[\033[1;36mStatus\033[0m] Connected to the server..." << endl;
-    cout << "[\033[1;33mNew connection\033[0m][\033[1mServer IP\033[0m] " << server_ip << endl;
-    cout << "[\033[1;33mNew connection\033[0m][\033[1mServer Port\033[0m] " << server_port << endl;
+    system("clear");
+    title(1);
+    cout << "Connected to the server..." << endl << endl;
+    cout << "[\033[1;32mSuccess\033[0m] Connection established" << endl;
+    cout << "[\033[1mServer IP\033[0m] " << server_ip << endl;
+    cout << "[\033[1mServer Port\033[0m] " << server_port << endl;
+    cout << endl << ">>> Press ENTER to continue" << endl;
+    cin.get();
 
     // receive data from the server
     char buffer[4096];
@@ -50,6 +55,8 @@ int main(int argc, char *argv[]){
     string username = getNowUsername(client_fd);
 
     while(1){
+        system("clear");
+        title(1);
         string choice;
         if(username.empty()){
             choice = clientMainMenu(username, 0);
@@ -66,10 +73,12 @@ int main(int argc, char *argv[]){
         }else if(choice == "0"){
             // User Registration
             while(1){
+                system("clear");
+                title(1);
                 // enter data
                 client_message = userRegistration(username);
                 if(client_message.empty()){
-                    cout << "Press ENTER to continue" << endl;
+                    cout << ">>> Press ENTER to continue" << endl;
                     cin.get();
                     continue;
                 }
@@ -85,17 +94,19 @@ int main(int argc, char *argv[]){
                 }
                 cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
                 cout << endl;
-                cout << "Press ENTER to continue" << endl;
+                cout << ">>> Press ENTER to continue" << endl;
                 cin.get();
                 break;
             }
         }else if(choice == "1"){
             // User Login
             while(1){
+                system("clear");
+                title(1);
                 // enter data
                 client_message = UserLogin(username);
                 if(client_message.empty()){
-                    cout << "Press ENTER to continue" << endl;
+                    cout << ">>> Press ENTER to continue" << endl;
                     cin.get();
                     continue;
                 }
@@ -115,7 +126,7 @@ int main(int argc, char *argv[]){
 
                 cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
                 cout << endl;
-                cout << "Press ENTER to continue" << endl;
+                cout << ">>> Press ENTER to continue" << endl;
                 cin.get();
                 
                 if(string(buffer, 0, bytes_received).find("[\033[1;32mSuccess\033[0m]") != string::npos){
@@ -126,7 +137,7 @@ int main(int argc, char *argv[]){
             // User Logout
             client_message = "[User Logout]";
             if(client_message.empty()){
-                cout << "Press ENTER to continue" << endl;
+                cout << ">>> Press ENTER to continue" << endl;
                 cin.get();
                 continue;
             }
@@ -146,12 +157,12 @@ int main(int argc, char *argv[]){
 
             cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
             cout << endl;
-            cout << "Press ENTER to continue" << endl;
+            cout << ">>> Press ENTER to continue" << endl;
             cin.get();
         }else{
             printError("Invalid choice");
             cout << endl;
-            cout << "Press ENTER to continue" << endl;
+            cout << ">>> Press ENTER to continue" << endl;
             cin.get();
             continue;
         }
@@ -177,7 +188,6 @@ string userRegistration(string username){
     User account;
     string message;
 
-    cout << endl;
     statusMessage(username);
     cout << endl;
 
@@ -205,7 +215,6 @@ string UserLogin(string &username){
     User account;
     string message;
 
-    cout << endl;
     statusMessage(username);
     cout << endl;
 

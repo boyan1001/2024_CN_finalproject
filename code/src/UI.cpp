@@ -37,8 +37,7 @@ void clientWelcome(){
 
 string clientMainMenu(string username, int mode){
     string choice;
-
-    cout << endl;
+    
     statusMessage(username);
     cout << endl;
 

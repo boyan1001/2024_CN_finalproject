@@ -9,6 +9,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
     int server_port = atoi(argv[1]);
+    string server_ip = "127.0.0.1";
     system("clear");
 
     // print title
@@ -39,12 +40,15 @@ int main(int argc, char *argv[]){
     bzero(&server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(server_port);
-    server_address.sin_addr.s_addr = inet_addr(SERVER_IP);
+    server_address.sin_addr.s_addr = inet_addr(server_ip.c_str());
 
     if(bind(server_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0){
         printError("Binding the socket to an IP / port");
         exit(1);
     }
+    cout << "[\033[1;36mStatus\033[0m] Server is binded" << endl;
+    cout << "[\033[1;33mInfo\033[0m][\033[1mServer IP\033[0m] " << server_ip << endl;
+    cout << "[\033[1;33mInfo\033[0m][\033[1mServer Port\033[0m] " << server_port << endl;
 
     // listen for connections
     int listening = listen(server_fd, 5);
