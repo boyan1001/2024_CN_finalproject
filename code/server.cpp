@@ -1,7 +1,14 @@
-#include "server.h"
-#include "UI.h"
+#include "server.hpp"
+#include "src/UI.hpp"
 
-int main(){
+int main(int argc, char *argv[]){
+
+    // argument
+    if(argc != 2){
+        printError("Invalid argument, Usage: ./server <server port>");
+        exit(1);
+    }
+    int server_port = atoi(argv[1]);
     system("clear");
 
     // print title
@@ -31,7 +38,7 @@ int main(){
     struct sockaddr_in server_address;
     bzero(&server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(SERVER_PORT);
+    server_address.sin_port = htons(server_port);
     server_address.sin_addr.s_addr = inet_addr(SERVER_IP);
 
     if(bind(server_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0){
@@ -78,9 +85,45 @@ int main(){
             }
             cout << "[\033[1mClient\033[0m] " << string(buffer, 0, bytes_received) << endl;
 
-            // send back to client a message
-            string message = "Server received the message";
-            send(new_fd, message.c_str(), message.size() + 1, 0);
+            // User Registration
+            if(string(buffer, 0, bytes_received).find("[User Registration]") != string::npos){
+                // get username and pwd
+                User account;
+                account.username = string(buffer, 20, string(buffer, 20, bytes_received).find(":"));
+                account.password = string(buffer, 20 + string(buffer, 20, bytes_received).find(":") + 1, bytes_received - 20 - string(buffer, 20, bytes_received).find(":") - 1);
+                
+                // find if the user already exists
+                ifstream file("./data/account.csv");
+                string line;
+                bool userExists = false;
+                getline(file, line); // skip the first line
+                while(getline(file, line)){
+                    if(line.find(account.username) != string::npos){
+                        userExists = true;
+                        break;
+                    }
+                }
+
+                // send back to client a message and regigster the user
+                if(userExists){
+                    string message = "[\033[1;31mError\033[0m] User already exists";
+                    cout << "[\033[1;32mServer\033[0m]" << message << endl;
+                    send(new_fd, message.c_str(), message.size() + 1, 0);
+                }else{
+                    ofstream file("./data/account.csv", ios::app);
+                    file << account.username << "," << account.password << endl;
+
+                    string message = "User registered successfully";
+                    cout << "[\033[1;32mServer\033[0m] " << message << endl;
+                    send(new_fd, message.c_str(), message.size() + 1, 0);
+                }
+
+                file.close();
+            }else{
+                // send back to client a message
+                string message = "Server received the message";
+                send(new_fd, message.c_str(), message.size() + 1, 0);
+            }
         }
         close(new_fd);
     }

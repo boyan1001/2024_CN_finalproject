@@ -1,4 +1,4 @@
-#include "UI.h"
+#include "UI.hpp"
 
 // mode: 0 for server, 1 for client
 void title(int mode){
@@ -11,7 +11,7 @@ void title(int mode){
     }else{
         cout << "Mode: \033[1mClient\033[0m" << endl;
     }
-    
+
     cout << "--------------------------------------------------" << endl;
     return;
 }
@@ -33,4 +33,18 @@ void clientWelcome(){
     cout << "Press ENTER to start the client" << endl;
     cin.get();
     return;
+}
+
+string clientMainMenu(){
+    string choice;
+    cout << endl;
+    cout << "Press the key to choose the operation you want to do:" << endl;
+    cout << "   0: User Registration" << endl;
+    cout << "   1: User Login" << endl;
+    cout << "   R: Exit" << endl;
+    cout << endl;
+    cout << "Your choice: ";
+    getline(cin, choice);
+    cout << endl;
+    return choice;
 }

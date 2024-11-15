@@ -11,3 +11,5 @@ void printError(string error);
 void serverWelcome();
 
 void clientWelcome();
+
+string clientMainMenu();
