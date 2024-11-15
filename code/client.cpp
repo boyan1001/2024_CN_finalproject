@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
     char buffer[4096];
     bzero(buffer, 4096);
     
-    string username;
+    string username = getNowUsername(client_fd);
 
     while(1){
         string choice = clientMainMenu(username);
@@ -106,9 +106,7 @@ int main(int argc, char *argv[]){
                 }
 
                 // check if the user is logined
-                if(string(buffer, 0, bytes_received).find("[\033[1;31mError\033[0m]") != string::npos){
-                    username = "";
-                }
+                username = getNowUsername(client_fd);
 
                 cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
                 cout << endl;
@@ -197,4 +195,20 @@ string UserLogin(string &username){
 
     username = account.username;
     return message;
+}
+
+string getNowUsername(int client_fd){
+    char buffer[4096];
+    string client_message = "[Info] Get Username";
+    send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
+    int bytes_received = recv(client_fd, buffer, 4096, 0);
+    if(bytes_received < 0){
+        printError("Receiving data from the server");
+        return "";
+    }
+    if(string(buffer, 0, bytes_received).find("[\033[1;31mError\033[0m]") != string::npos){
+        return "";
+    }else{
+        return string(buffer, 0, bytes_received).substr(string(buffer, 0, bytes_received).find(" ") + 1);
+    }
 }

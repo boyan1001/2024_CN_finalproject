@@ -57,6 +57,8 @@ int main(int argc, char *argv[]){
     struct sockaddr_in accept_address;
     socklen_t accept_addressSize = sizeof(accept_address);
 
+    User login_user;
+
     while(1){
         // accept the call
         int new_fd = accept(server_fd, (struct sockaddr*)&accept_address, &accept_addressSize);
@@ -110,14 +112,14 @@ int main(int argc, char *argv[]){
                 // send back to client a message and regigster the user
                 if(user_exist){
                     string message = "[\033[1;31mError\033[0m] User already exists";
-                    cout << "[\033[1;32mServer\033[0m]" << message << endl;
+                    cout << "[\033[1mServer\033[0m]" << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
                 }else{
                     ofstream file("./data/account.csv", ios::app);
                     file << account.username << "," << account.password << endl;
 
                     string message = "[\033[1;32mSuccess\033[0m] User registered successfully";
-                    cout << "[\033[1;32mServer\033[0m]" << message << endl;
+                    cout << "[\033[1mServer\033[0m]" << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
                 }
 
@@ -156,15 +158,32 @@ int main(int argc, char *argv[]){
                 // check
                 if(!user_exist){
                     string message = "[\033[1;31mError\033[0m] User does not exist";
-                    cout << "[\033[1;32mServer\033[0m] " << message << endl;
+                    cout << "[\033[1mServer\033[0m] " << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
                 }else if(!login_access){
                     string message = "[\033[1;31mError\033[0m] Incorrect password";
-                    cout << "[\033[1;32mServer\033[0m] " << message << endl;
+                    cout << "[\033[1mServer\033[0m] " << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
                 }else{
+                    // store login user info
+                    login_user.username = account.username;
+                    login_user.password = account.password;
+
                     string message = "[\033[1;32mSuccess\033[0m] User logged in successfully";
-                    cout << "[\033[1;32mServer\033[0m]" << message << endl;
+                    cout << "[\033[1mServer\033[0m]" << message << endl;
+                    send(new_fd, message.c_str(), message.size() + 1, 0);
+                }
+            }else if(string(buffer, 0, bytes_received).find("[Info]") != string::npos){
+                // get info
+                if(string(buffer, 0, bytes_received).find("Get Username") != string::npos){
+                    // get login username
+                    string message = "";
+                    if(login_user.username.empty()){
+                        message = "[\033[1;31mError\033[0m] Not Logined";
+                    }else{
+                        message = "[\033[1;32mSuccess\033[0m] " + login_user.username;
+                    }
+                    cout << "[\033[1mServer\033[0m]" << message << endl;
                     send(new_fd, message.c_str(), message.size() + 1, 0);
                 }
             }else{
