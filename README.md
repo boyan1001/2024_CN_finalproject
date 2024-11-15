@@ -52,7 +52,9 @@ g++ --version
 sudo apt install g++
 ```
 ### 函式庫  
-本專案只需使用系統內建的標準 C++ 函式庫，因此無需安裝額外的函式庫。請確認環境支援下列 header file：
+本專案只需使用系統內建的標準 C++ 函式庫，因此無需安裝額外的函式庫。  
+  
+請確認環境支援下列 header file：
 - `<bits/stdc++.h>`（C++ 中大多基本函式庫）。
 - `<fstream>`、`<sstream>`（用於資料的讀出讀入）。 
 - `<sys/socket.h>`、`<netinet/in.h>`、`<arpa/inet.h>`（用於 socket 程式設計和網路通訊）。
@@ -78,13 +80,17 @@ sudo apt install g++
 
 ### Client 端
 
+*(本程式目前僅支援 1 個 client 與 1 個 server 連接)*
+
+啟動 client 前，請先確認 server 在運作狀態中，之後再啟動 client
+
 啟動 client 後，會先與 server 連接成功後，才會進入主頁面。
 
 #### 註冊帳號  
 
 註冊帳號與密碼時，需要符合以下條件才可註冊：
 - 不可出現冒號 :   
-- 不可出現空格
+- 不可出現空格  
 若出現不合法的帳戶名與密碼，將會出現錯誤訊息
 
 #### 登入帳號  
