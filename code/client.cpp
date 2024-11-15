@@ -227,8 +227,8 @@ string UserLogin(string &username){
         return "";
     }
 
-    if(account.username.find(":") != string::npos || account.password.find(":") != string::npos){
-        printError("Username or password cannot contain ':'");
+    if(account.username.find(":") != string::npos || account.password.find(":") != string::npos || account.username.find(" ") != string::npos || account.password.find(" ") != string::npos){
+        printError("Username or password cannot contain ':' and space");
         return "";
     }
 
