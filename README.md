@@ -61,7 +61,7 @@ sudo apt install g++
 
 ## ⚙️ 如何使用  
 
-輸入 `make` 即可編譯   
+在 `code` 目錄下執行 `make` 命令即可編譯  
   
 `./server.o <server port>` 可以在 server port 開啟 server    
   
