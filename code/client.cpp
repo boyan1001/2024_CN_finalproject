@@ -72,3 +72,21 @@ string getNowUsername(int client_fd){
         return string(buffer, 0, bytes_received).substr(string(buffer, 0, bytes_received).find(" ") + 1);
     }
 }
+
+string getIPfromDomain(string domain){
+    struct hostent *host;
+    struct in_addr **addr_list;
+    string ip;
+
+    if((host = gethostbyname(domain.c_str())) == NULL){
+        printError("Getting host by name");
+        return "";
+    }
+
+    addr_list = (struct in_addr **) host->h_addr_list;
+    for(int i = 0; addr_list[i] != NULL; i++){
+        ip = inet_ntoa(*addr_list[i]);
+    }
+
+    return ip;
+}

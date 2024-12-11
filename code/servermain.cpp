@@ -11,10 +11,11 @@ int main(int argc, char *argv[]){
     }
     int server_port = atoi(argv[1]);
 
-    // use here ip
-    string server_ip = getLocalAddress();
     system("clear");
 
+
+    // get server interfaces
+    vector<string> interfaces = getIPAddress();
     // print title
     title(0);
     serverWelcome();
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-
+    string server_ip = interfaces[interfaces.size()-1];
     // bind the socket to an IP / port
     struct sockaddr_in server_address;
     bzero(&server_address, sizeof(server_address));

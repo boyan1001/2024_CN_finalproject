@@ -23,3 +23,5 @@ string userRegistration(string username);
 string UserLogin(string &username);
 
 string getNowUsername(int client_fd);
+
+string getIPfromDomain(string domain);

@@ -6,6 +6,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #pragma once
 
@@ -17,3 +18,7 @@ typedef struct{
 }User;
 
 string getLocalAddress();
+
+vector<string> getIPAddress();
+
+void bindAndListen(int server_fd, int server_port, string interface);

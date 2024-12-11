@@ -9,7 +9,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    string server_ip = argv[1];
+    string server_domain = argv[1];
     int server_port = atoi(argv[2]);
 
     system("clear");
@@ -23,6 +23,13 @@ int main(int argc, char *argv[]){
 
     if(client_fd == -1){
         printError("Creating a socket");
+        exit(1);
+    }
+
+    // get server ip
+    string server_ip = getIPfromDomain(server_domain);
+    if(server_ip.empty()){
+        printError("Getting server IP");
         exit(1);
     }
 
