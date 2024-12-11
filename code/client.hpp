@@ -1,10 +1,13 @@
-#include <sys/socket.h>
+#include <string>
+#include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
-#include <bits/stdc++.h>
-#include <fstream>
-#include <sstream>
+#include <netdb.h>
+
+
+#include <map>
+#include <string>
+
 
 #pragma once
 

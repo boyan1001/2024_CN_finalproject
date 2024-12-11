@@ -1,9 +1,11 @@
-#include <sys/socket.h>
+#include <iostream>
+#include <string>
+#include <ifaddrs.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <bits/stdc++.h>
-#include <fstream>
-#include <sstream>
+
+#include <map>
+#include <string>
 
 #pragma once
 
@@ -13,3 +15,5 @@ typedef struct{
     string username;
     string password;
 }User;
+
+string getLocalAddress();

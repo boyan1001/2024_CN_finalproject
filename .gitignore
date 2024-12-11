@@ -33,3 +33,6 @@ logs/
 *.exe
 *.out
 *.app
+
+# zip
+*.zip
