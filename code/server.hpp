@@ -3,6 +3,7 @@
 #include <ifaddrs.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 #include <map>
 #include <string>
@@ -17,8 +18,12 @@ typedef struct{
     string password;
 }User;
 
-string getLocalAddress();
+// string getLocalAddress();
 
-vector<string> getIPAddress();
+string getIPAddress();
 
 void bindAndListen(int server_fd, int server_port, string interface);
+
+int acceptClient(int server_fd, struct sockaddr_in accept_address, socklen_t accept_addressSize);
+
+void *handleClient(void* client_fd);
