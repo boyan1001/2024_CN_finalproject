@@ -36,3 +36,6 @@ logs/
 
 # zip
 *.zip
+
+# test
+test*.cpp

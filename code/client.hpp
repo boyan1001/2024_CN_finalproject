@@ -25,3 +25,5 @@ string UserLogin(string &username);
 string getNowUsername(int client_fd);
 
 string getIPfromDomain(string domain);
+
+void returnMessage();
