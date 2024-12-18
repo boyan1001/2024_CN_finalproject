@@ -11,8 +11,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // string server_ip = getIPfromDomain(argv[1]);
-    string server_ip = argv[1];
+    string server_ip = getIPfromDomain(argv[1]);
+    // string server_ip = argv[1];
     int server_port = atoi(argv[2]);
 
     system("clear");
