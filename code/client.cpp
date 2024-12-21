@@ -59,7 +59,6 @@ string UserLogin(string &username)
 
     message = "[User Login] " + account.username + ":" + account.password;
 
-    username = account.username;
     return message;
 }
 

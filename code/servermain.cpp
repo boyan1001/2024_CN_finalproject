@@ -75,10 +75,9 @@ int main(int argc, char *argv[]){
         
         cout << "[\033[1;33mNew connection\033[0m][\033[1mClient IP\033[0m] " << inet_ntoa(accept_address.sin_addr) << endl;
         cout << "[\033[1;33mNew connection\033[0m][\033[1mClient Port\033[0m] " << ntohs(accept_address.sin_port) << endl;
-
+        
         int* new_client_fd = new int(client_fd);
         pthread_t client_thread;
-
 
         if(pthread_create(&client_thread, nullptr, handleClient, (void*)new_client_fd) != 0){
             printError("Creating a thread");

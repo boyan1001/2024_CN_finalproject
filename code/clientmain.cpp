@@ -46,11 +46,13 @@ int main(int argc, char *argv[])
     // If connected, start sending and receiving data
     system("clear");
     title(1);
-    cout << "Connected to the server..." << endl << endl;
+    cout << "Connected to the server..." << endl
+         << endl;
     cout << "[\033[1;32mSuccess\033[0m] Connection established" << endl;
     cout << "[\033[1mServer IP\033[0m] " << server_ip << endl;
     cout << "[\033[1mServer Port\033[0m] " << server_port << endl;
-    cout << endl << ">>> Press ENTER to continue" << endl;
+    cout << endl
+         << ">>> Press ENTER to continue" << endl;
     cin.get();
 
     // receive data from the server
@@ -85,6 +87,7 @@ int main(int argc, char *argv[])
             {
                 system("clear");
                 title(1);
+
                 // enter data
                 client_message = userRegistration(username);
                 if (client_message.empty())
@@ -138,10 +141,18 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                // check if the user is logined
-                username = getNowUsername(client_fd);
+                string rcv_message = string(buffer, 0, bytes_received);
 
-                cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+                if (rcv_message.find("[\033[1;32mError\033[0m]") != string::npos)
+                {
+                    printError(rcv_message.substr(0, rcv_message.find("]") + 1));
+                }
+                else
+                {
+                    // check if the user is logined
+                    username = getNowUsername(client_fd);
+                }
+
                 cout << endl;
                 cout << ">>> Press ENTER to continue" << endl;
                 cin.get();

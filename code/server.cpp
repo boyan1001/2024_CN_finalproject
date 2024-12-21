@@ -1,39 +1,7 @@
 #include "server.hpp"
 #include "src/UI.hpp"
 
-// get local ip address
-// string getLocalAddress(){
-//     struct ifaddrs *interfaces = nullptr;
-//     struct ifaddrs *temp_addr = nullptr;
-
-//     // get current interfaces
-//     if(getifaddrs(&interfaces) == -1){
-//         printError("Getting network interfaces");
-//         return "";
-//     }
-
-//     string local_ip = "";
-//     temp_addr = interfaces;
-
-//     // extract the local IP address from the interfaces
-//     while(temp_addr != nullptr){
-//         if(temp_addr->ifa_addr->sa_family == AF_INET){
-//             char addressBuffer[INET_ADDRSTRLEN];
-//             void* addr_ptr = &((struct sockaddr_in*)temp_addr->ifa_addr)->sin_addr;
-
-//             // convert the IP to a string and store it in local_ip
-//             inet_ntop(AF_INET, addr_ptr, addressBuffer, INET_ADDRSTRLEN);
-//             local_ip = addressBuffer;
-//             break;
-//         }
-//         temp_addr = temp_addr->ifa_next;
-//     }
-
-//     // free the memory
-//     freeifaddrs(interfaces);
-
-//     return local_ip;
-// }
+static unordered_map<string, int> name_to_fd;
 
 // get ip addresses from external interface to the server
 string getIPAddress()
@@ -65,46 +33,6 @@ string getIPAddress()
     return ip_address;
 }
 
-// // bind and listen to the server
-// void bindAndListen(int server_fd, int server_port, string server_ip){
-//     struct sockaddr_in server_address;
-
-//     // bind the socket to an IP / port
-//     bzero(&server_address, sizeof(server_address));
-//     server_address.sin_family = AF_INET;
-//     server_address.sin_port = htons(server_port);
-//     server_address.sin_addr.s_addr = inet_addr(server_ip.c_str());
-
-//     if(bind(server_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0){
-//         printError("Binding the socket to an IP / port");
-//         exit(1);
-//     }
-//     cout << "[\033[1;36mStatus\033[0m] Server is binded" << endl;
-//     cout << "[\033[1;33mInfo\033[0m][\033[1mServer IP\033[0m] " << server_ip << endl;
-//     cout << "[\033[1;33mInfo\033[0m][\033[1mServer Port\033[0m] " << server_port << endl;
-
-//     // listen for connections
-//     int listening = listen(server_fd, 5);
-//     if(listening < 0){
-//         printError("Listening for connections");
-//         exit(1);
-//     }
-//     cout << "[\033[1;36mStatus\033[0m] Server is listening..." << endl;
-// }
-
-// accept the client connection
-// int acceptClient(int server_fd, struct sockaddr_in accept_address, socklen_t accept_addressSize){
-//     int client_fd = accept(server_fd, (struct sockaddr*)&accept_address, &accept_addressSize);
-//     if(client_fd < 0){
-//         printError("Accepting the call");
-//         return -1;
-//     }
-//     cout << "[\033[1;33mNew connection\033[0m][\033[1mClient IP\033[0m] " << inet_ntoa(accept_address.sin_addr) << endl;
-//     cout << "[\033[1;33mNew connection\033[0m][\033[1mClient Port\033[0m] " << ntohs(accept_address.sin_port) << endl;
-
-//     return client_fd;
-// }
-
 // handle client
 void *handleClient(void *new_fd)
 {
@@ -120,7 +48,15 @@ void *handleClient(void *new_fd)
         string rcv_message = string(buffer, 0, 4096);
         string snd_message;
 
+        if (login_user.username != "")
+        {
+            name_to_fd[login_user.username] = client_fd;
+        }
+
+        # if DEBUG == 1
         cout << "[\033[1mClient\033[0m] " << rcv_message << endl;
+        # endif
+
         if (rcv_message.find("[Exit]") != string::npos)
         {
             cout << "[\033[1mServer\033[0m] Client exited" << endl;
@@ -133,11 +69,11 @@ void *handleClient(void *new_fd)
         }
         else if (rcv_message.find("[User Login]") != string::npos)
         {
-            snd_message = UserLogin(rcv_message, login_user);
+            snd_message = UserLogin(rcv_message, login_user, client_fd);
         }
         else if (rcv_message.find("[User Logout]") != string::npos)
         {
-            snd_message = UserLogout(login_user);
+            snd_message = UserLogout(login_user, client_fd);
         }
         else if (rcv_message.find("[Info]") != string::npos)
         {
@@ -146,15 +82,24 @@ void *handleClient(void *new_fd)
         else
         {
             // send back to client a message
+            # if DEBUG == 1
             cout << "[\033[1mServer\033[0m] " << rcv_message << endl;
+            # endif
         }
 
+        # if DEBUG == 1
         cout << "[\033[1mServer\033[0m] " << snd_message << endl;
+        # endif
         send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
 
         bzero(buffer, 4096);
     }
-
+    
+    if(login_user.username != "")
+    {
+        name_to_fd[login_user.username] = 0;
+    }
+    
     cout << "Client disconnected, socket: " << client_fd << endl;
     close(client_fd); // 關閉 client socket
     return nullptr;
@@ -172,9 +117,12 @@ string userRegistration(string rcv_message)
     {
         account.username = match[1];
         account.password = match[2];
-    }else{
+    }
+    else
+    {
         return "[\033[1;31mError\033[0m] Invalid message format";
     }
+
     cout << "[\033[1;33mUser Registration\033[0m][\033[1mUsername\033[0m] " << account.username << endl;
     cout << "[\033[1;33mUser Registration\033[0m][\033[1mPassword\033[0m] " << account.password << endl;
 
@@ -210,7 +158,7 @@ string userRegistration(string rcv_message)
     return message;
 }
 
-string UserLogin(string rcv_message, User &login_user)
+string UserLogin(string rcv_message, User &login_user, int client_fd)
 {
     // User Login
     // get username and pwd
@@ -223,8 +171,24 @@ string UserLogin(string rcv_message, User &login_user)
     {
         account.username = match[1];
         account.password = match[2];
-    }else{
+    }
+    else
+    {
         return "[\033[1;31mError\033[0m] Invalid message format";
+    }
+
+    if(account.username.empty() || account.password.empty())
+    {
+        message = "[\033[1;31mError\033[0m] Username or password cannot be empty";
+        cout << "[\033[1mServer\033[0m] " << message << endl;
+        return message;
+    }
+
+    if(name_to_fd[account.username] != 0)
+    {
+        message = "[\033[1;31mError\033[0m] A user can only login one device";
+        cout << "[\033[1mServer\033[0m] " << message << endl;
+        return message;
     }
 
     cout << "[\033[1;33mUser Login\033[0m][\033[1mUsername\033[0m] " << account.username << endl;
@@ -267,17 +231,25 @@ string UserLogin(string rcv_message, User &login_user)
     }
     else
     {
+        // remove original name_to_fd
+        if (!name_to_fd[login_user.username])
+            name_to_fd[login_user.username] = 0;
+
         // store login user info
         login_user.username = account.username;
         login_user.password = account.password;
 
+        // update name_to_fd
+        name_to_fd[login_user.username] = client_fd;
+
         message = "[\033[1;32mSuccess\033[0m] User logged in successfully";
+
         cout << "[\033[1mServer\033[0m]" << message << endl;
     }
     return message;
 }
 
-string UserLogout(User &login_user)
+string UserLogout(User &login_user, int client_fd)
 {
     // User Logout
     // check if the user is logined
@@ -289,6 +261,10 @@ string UserLogout(User &login_user)
     }
     else
     {
+        // remove original name_to_fd
+        if (!name_to_fd[login_user.username])
+            name_to_fd[login_user.username] = 0;
+
         login_user.username = "";
         login_user.password = "";
         message = "[\033[1;32mSuccess\033[0m] User logged out successfully";

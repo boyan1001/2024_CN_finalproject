@@ -5,10 +5,12 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <regex>
+
+#define DEBUG 1
 
 #pragma once
 
@@ -31,8 +33,8 @@ void *handleClient(void* new_fd);
 
 string userRegistration(string username);
 
-string UserLogin(string rcv_message, User &login_user);
+string UserLogin(string rcv_message, User &login_user, int client_fd);
 
-string UserLogout(User &login_user);
+string UserLogout(User &login_user, int client_fd);
 
 string getInfo(string rcv_message, User &login_user);
