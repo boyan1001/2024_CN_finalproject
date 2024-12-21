@@ -79,6 +79,8 @@ string getNowUsername(int client_fd)
     }
     else
     {
+        string username = string(buffer, 0, bytes_received);
+        username = username.substr(username.find(" ") + 1);
         return string(buffer, 0, bytes_received).substr(string(buffer, 0, bytes_received).find(" ") + 1);
     }
 }

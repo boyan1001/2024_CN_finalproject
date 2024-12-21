@@ -285,7 +285,7 @@ string getInfo(string rcv_message, User &login_user)
         }
         else
         {
-            message = "[\033[1;32mSuccess\033[0m] Username: " + login_user.username;
+            message = "[\033[1;32mSuccess\033[0m] " + login_user.username;
         }
     }
     return message;
