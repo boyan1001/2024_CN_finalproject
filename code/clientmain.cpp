@@ -107,7 +107,8 @@ int main(int argc, char *argv[])
                     printError("Receiving data from the server");
                     break;
                 }
-                cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+                string rcv_message = string(buffer, 0, bytes_received);
+                cout << rcv_message << endl;
                 cout << endl;
                 cout << ">>> Press ENTER to continue" << endl;
                 cin.get();
@@ -143,13 +144,14 @@ int main(int argc, char *argv[])
 
                 string rcv_message = string(buffer, 0, bytes_received);
 
-                if (rcv_message.find("[\033[1;32mError\033[0m]") != string::npos)
+                if (rcv_message.find("[\033[1;31mError\033[0m]") != string::npos)
                 {
-                    printError(rcv_message.substr(0, rcv_message.find("]") + 1));
+                    cout << rcv_message << endl;
                 }
                 else
                 {
                     // check if the user is logined
+                    cout << rcv_message << endl;
                     username = getNowUsername(client_fd);
                 }
 
@@ -176,6 +178,8 @@ int main(int argc, char *argv[])
 
             // receive from server
             int bytes_received = recv(client_fd, buffer, 4096, 0);
+            string rcv_message = string(buffer, 0, bytes_received);
+
             if (bytes_received < 0)
             {
                 printError("Receiving data from the server");
@@ -185,7 +189,7 @@ int main(int argc, char *argv[])
             // check if the user is logined
             username = getNowUsername(client_fd);
 
-            cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
+            cout << rcv_message << endl;
             cout << endl;
             cout << ">>> Press ENTER to continue" << endl;
             cin.get();

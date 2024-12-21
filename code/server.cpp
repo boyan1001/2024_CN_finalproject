@@ -111,7 +111,7 @@ string userRegistration(string rcv_message)
     // User Registration
     // get username and pwd
     User account;
-    regex pattern(R"(\[User Registration\]\s+(\w+):(\w+))");
+    regex pattern(R"(\[User Registration\]\s+(.+):(\w+))");
     smatch match;
     if (regex_search(rcv_message, match, pattern))
     {
@@ -164,7 +164,7 @@ string UserLogin(string rcv_message, User &login_user, int client_fd)
     // get username and pwd
     User account;
     string message;
-    regex pattern(R"(\[User Login\]\s+(\w+):(\w+))");
+    regex pattern(R"(\[User Login\]\s+(.+):(\w+))");
     smatch match;
 
     if (regex_search(rcv_message, match, pattern))
@@ -262,8 +262,7 @@ string UserLogout(User &login_user, int client_fd)
     else
     {
         // remove original name_to_fd
-        if (!name_to_fd[login_user.username])
-            name_to_fd[login_user.username] = 0;
+        if (name_to_fd[login_user.username] != 0)name_to_fd[login_user.username] = 0;
 
         login_user.username = "";
         login_user.password = "";
