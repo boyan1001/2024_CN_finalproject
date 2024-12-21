@@ -127,7 +127,7 @@ string userRegistration(string rcv_message)
     cout << "[\033[1;33mUser Registration\033[0m][\033[1mPassword\033[0m] " << account.password << endl;
 
     // find if the user already exists
-    ifstream file("./data/account.csv");
+    ifstream file("./data/server/account.csv");
     string line;
     bool user_exist = false;
     getline(file, line); // skip the first line

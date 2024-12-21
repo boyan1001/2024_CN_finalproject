@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
 
     // receive data from the server
     string username = getNowUsername(client_fd);
+    
     char buffer[4096];
 
     while (1)
