@@ -3,7 +3,7 @@
 // mode: 0 for server, 1 for client
 void title(int mode){
     cout << "--------------------------------------------------" << endl;
-    cout << "Computer Network Socket Programming Project (Phase 1)" << endl;
+    cout << "Computer Network Socket Programming Project (Phase 2)" << endl;
     cout << "Student ID: 41247020S" << endl;
 
     if(mode == 0){
@@ -48,6 +48,7 @@ string clientMainMenu(string username, int mode){
         cout << "   1: User Login" << endl;
     }else{
         cout << "   2: User Logout" << endl;
+        cout << "   3: Chatting" << endl;
     }
     cout << "   R: Exit" << endl;
     cout << endl;
@@ -67,4 +68,12 @@ void statusMessage(string username){
     cout << "[\033[1mUser Account Status\033[0m] \033[1;32mLogined\033[0m" << endl;
     cout << "[\033[1mUsername\033[0m] " << username << endl;
     return;
+}
+
+string chatMenu(string username){
+    statusMessage(username);
+    cout << endl;
+    cout << "Enter the user name you want to chat: " << endl;
+    getline(cin, username);
+    return username;
 }

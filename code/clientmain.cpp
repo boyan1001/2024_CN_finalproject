@@ -11,8 +11,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    string server_ip = getIPfromDomain(argv[1]);
-    // string server_ip = argv[1];
+    // string server_ip = getIPfromDomain(argv[1]);
+    string server_ip = argv[1];
     int server_port = atoi(argv[2]);
 
     system("clear");
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-        else if (choice == "1")
+        else if (choice == "1" && username.empty())
         {
             // User Login
             while (1)
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-        else if (choice == "2")
+        else if (choice == "2" && !username.empty())
         {
             // User Logout
             client_message = "[User Logout]";
@@ -194,6 +194,11 @@ int main(int argc, char *argv[])
             cout << endl;
             cout << ">>> Press ENTER to continue" << endl;
             cin.get();
+        }
+        else if(choice == "3" && !username.empty())
+        {
+            chatting(client_fd, username);
+            continue;
         }
         else
         {

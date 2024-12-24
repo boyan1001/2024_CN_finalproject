@@ -6,6 +6,7 @@
 #include <pthread.h>
 
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <vector>
 #include <regex>
@@ -38,3 +39,5 @@ string UserLogin(string rcv_message, User &login_user, int client_fd);
 string UserLogout(User &login_user, int client_fd);
 
 string getInfo(string rcv_message, User &login_user);
+
+void chatting(string snd_message, int client_fd, User login_user);

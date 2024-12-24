@@ -2,6 +2,7 @@
 #include "src/UI.hpp"
 
 static unordered_map<string, int> name_to_fd;
+static unordered_set<string> waiting_for_chatting;
 
 // get ip addresses from external interface to the server
 string getIPAddress()
@@ -57,7 +58,7 @@ void *handleClient(void *new_fd)
         cout << "[\033[1mClient\033[0m] " << rcv_message << endl;
         # endif
 
-        if (rcv_message.find("[Exit]") != string::npos)
+        if (rcv_message.find("[Exit]") != string::npos && rcv_message.find("[Chatting]") == string::npos)
         {
             cout << "[\033[1mServer\033[0m] Client exited" << endl;
             break;
@@ -74,6 +75,12 @@ void *handleClient(void *new_fd)
         else if (rcv_message.find("[User Logout]") != string::npos)
         {
             snd_message = UserLogout(login_user, client_fd);
+        }
+        else if(rcv_message.find("[Chatting]") != string::npos)
+        {
+            // chatting
+            chatting(rcv_message, client_fd, login_user);
+            continue;
         }
         else if (rcv_message.find("[Info]") != string::npos)
         {
@@ -148,7 +155,7 @@ string userRegistration(string rcv_message)
     }
     else
     {
-        ofstream file("./data/account.csv", ios::app);
+        ofstream file("./data/server/account.csv", ios::app);
         file << account.username << "," << account.password << endl;
 
         message = "[\033[1;32mSuccess\033[0m] User registered successfully";
@@ -195,7 +202,7 @@ string UserLogin(string rcv_message, User &login_user, int client_fd)
     cout << "[\033[1;33mUser Login\033[0m][\033[1mPassword\033[0m] " << account.password << endl;
 
     // find if the user exists
-    ifstream file("./data/account.csv");
+    ifstream file("./data/server/account.csv");
     string line;
     bool user_exist = false;
     bool login_access = false;
@@ -286,6 +293,85 @@ string getInfo(string rcv_message, User &login_user)
         {
             message = "[\033[1;32mSuccess\033[0m] " + login_user.username;
         }
+    }else if(rcv_message.find("[Info][Online]") != string::npos){
+        rcv_message = rcv_message.substr(rcv_message.find("] ") + 2);
+        string target_username = rcv_message;
+        cout << target_username << endl;
+        
+        if(name_to_fd[target_username] == 0){
+            message = "[\033[1;31mError\033[0m] User is offline";
+        }else{
+            message = "[\033[1;32mSuccess\033[0m] User is online";
+        }
     }
     return message;
+}
+
+void chatting(string snd_message, int client_fd, User login_user){
+    // invite a user to chat
+    if(snd_message.find("[Chatting][Invite]") != string::npos){
+        // [Chatting][Invite] username:target_username
+        regex pattern(R"(\[Chatting\]\[Invite\]\s+(.+):(.+))");
+        smatch match;
+        string inviter;
+        string accepter;
+
+        if(regex_search(snd_message, match, pattern)){
+            inviter = match[1];
+            accepter = match[2];
+        }else{
+            return;
+        }
+
+        waiting_for_chatting.insert(inviter);
+
+        if(waiting_for_chatting.find(accepter) != waiting_for_chatting.end()){
+            // send to accepter
+            int accepter_fd = name_to_fd[accepter];
+            string snd_message = "[Chatting][Start] " + accepter + ":" + inviter;
+            send(accepter_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+
+            // send to inviter
+            snd_message = "[Chatting][Start] " + inviter + ":" + accepter;
+            send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+        }else{
+            // send to inviter
+            string snd_message = "[Chatting][Wait] " + inviter + ":" + accepter;
+            send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+        }
+    }else if(snd_message.find("[Chatting][Exit]") != string::npos){
+        // [Chatting][Exit] me:target
+        string me;
+        string target;
+        regex pattern(R"(\[Chatting\]\[Exit\]\s+(.+):(.+))");
+        smatch match;
+        if(regex_search(snd_message, match, pattern)){
+            me = match[1];
+            target = match[2];
+        }
+        int target_fd = name_to_fd[target];
+
+        // request target to exit
+        waiting_for_chatting.erase(target);
+        string snd_message = "[Chatting][Exit]";
+        send(target_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+
+        // send back to me
+        waiting_for_chatting.erase(me);
+        send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+    }else if(snd_message.find("[Chatting][Message]") != string::npos){
+        // [Chatting][Message] sender:receiver:message
+        regex pattern(R"(\[Chatting\]\[Message\]\s+(.+):(.+):(.+))");
+        smatch match;
+        if(regex_search(snd_message, match, pattern)){
+            string sender = match[1];
+            string receiver = match[2];
+            string message = match[3];
+
+            int receiver_fd = name_to_fd[receiver];
+            string snd_message = "[Chatting][Message] " + sender + ":" + receiver + ":" + message;
+            send(receiver_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+        }
+    }
+    return;
 }
