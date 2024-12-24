@@ -1,6 +1,6 @@
 all:
-	-g++ -pthread -o server testserver.cpp
-	-g++ -pthread -o client testclient.cpp
+	-g++ -pthread -o server.o testserver.cpp
+	-g++ -pthread -o client.o testclient.cpp
 
 clean:
 	rm -f *.o

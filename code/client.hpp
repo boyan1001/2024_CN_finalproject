@@ -48,3 +48,5 @@ void resizeQueue();
 void printMessage();
 
 void printChatRoom(string username);
+
+bool isIP(string ip);

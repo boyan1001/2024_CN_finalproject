@@ -335,3 +335,9 @@ void printChatRoom(string username)
     printMessage();
     return;
 }
+
+bool isIP(string ip)
+{
+    regex pattern(R"(\d+\.\d+\.\d+\.\d+)");
+    return regex_match(ip, pattern);
+}
