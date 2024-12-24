@@ -14,14 +14,16 @@
 2024_CN_finalproject
 ├── /code/
 │  ├── /data/  
-│  │  └── account.csv  用戶資料純放區
-│  ├── /src/           其他主程式會用到的函式庫
-│  │  ├── UI.cpp       有關TUI設計的函式庫
+│  │  ├── /client/
+│  │  └── /server/
+│  │     ├── account.csv 儲存用戶資料
+│  ├── /src/             其他主程式會用到的函式庫
+│  │  ├── UI.cpp         有關TUI設計的函式庫
 │  │  ├── UI.hpp
 │  │  └── ...
-│  ├── client.cpp      client端的程式碼
+│  ├── client.cpp        client端的程式碼
 │  ├── client.hpp
-│  ├── server.cpp      server端的程式碼
+│  ├── server.cpp        server端的程式碼
 │  ├── server.hpp
 │  └── Makefile
 ├── .gitignore
@@ -52,9 +54,12 @@ g++ --version
 sudo apt install g++
 ```
 ### 函式庫  
-本專案只需使用系統內建的標準 C++ 函式庫，因此無需安裝額外的函式庫。  
+請先透過下方指令下載 **OpenSSL** 函式庫：  
+```sh
+sudo apt install openssl
+```
   
-請確認環境支援下列 header file：
+另外，確認環境支援下列 header file：
 - `<bits/stdc++.h>`（C++ 中大多基本函式庫）。
 - `<fstream>`、`<sstream>`（用於資料的讀出讀入）。 
 - `<sys/socket.h>`、`<netinet/in.h>`、`<arpa/inet.h>`（用於 socket 程式設計和網路通訊）。
