@@ -1,6 +1,6 @@
 all:
-	-g++ servermain.cpp server.cpp src/UI.cpp -o server.o -lm -lpthread
-	-g++ clientmain.cpp client.cpp src/UI.cpp -o client.o -lm -lpthread
+	-g++ servermain.cpp src/crypt.cpp src/UI.cpp server.cpp -o server.o -lm -lpthread -lssl -lcrypto
+	-g++ clientmain.cpp src/crypt.cpp src/UI.cpp client.cpp -o client.o -lm -lpthread -lssl -lcrypto
 
 clean:
 	rm -f *.o

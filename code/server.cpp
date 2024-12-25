@@ -1,8 +1,6 @@
 #include "server.hpp"
 #include "src/UI.hpp"
-
-static unordered_map<string, int> name_to_fd;
-static unordered_set<string> waiting_for_chatting;
+#include "src/crypt.hpp"
 
 // get ip addresses from external interface to the server
 string getIPAddress()
@@ -35,28 +33,63 @@ string getIPAddress()
 }
 
 // handle client
-void *handleClient(void *new_fd)
+void *handleClient(void *arg)
 {
     User login_user;
-    int client_fd = *(int *)new_fd;
+    ClientArgs *args = (ClientArgs *)arg;
+    int client_fd = args->client_fd;
+    unsigned char *key = args->aes_key;
+    unsigned char *iv = args->aes_iv;
 
-    char buffer[4096];
+    char buffer[4096] = {0};
 
-    int bytes_received;
+    ssize_t bytes_received;
 
-    while (bytes_received = recv(client_fd, buffer, 4096, 0) > 0)
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
+    // for(int i = 0; i < 32; i++){
+    //     printf("%02x", key[i]);
+    // }
+    // cout << endl;
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
+    // for(int i = 0; i < 16; i++){
+    //     printf("%02x", iv[i]);
+    // }
+    // cout << endl;
+
+    
+    // send to client AES key and IV
+    send(client_fd, key, 32, 0);
+    send(client_fd, iv, 16, 0);
+    cout << "[\033[1mServer\033[0m] AES key and IV sent to client " << client_fd << endl;
+
+    while ((bytes_received = recv(client_fd, buffer, sizeof(buffer), 0)) > 0)
     {
-        string rcv_message = string(buffer, 0, 4096);
+        // cout << "bytes_received: " << bytes_received << endl;
+        vector<unsigned char> rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+        // cout << "rcv_message_cipher size: " << rcv_message_cipher.size() << endl;
+        // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // 去除沒用的字元
+        // cout << "rcv_message_cipher: " << rcv_message_cipher << endl;
+        // show aes key and iv
+        // cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
+        // for(int i = 0; i < 32; i++){
+        //     printf("%02x", key[i]);
+        // }
+        // cout << endl;
+        // cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
+        // for(int i = 0; i < 16; i++){
+        //     printf("%02x", iv[i]);
+        // }
+        // cout << "rcv_message_cipher size: " << rcv_message_cipher.size() << endl;
+        string rcv_message = decrypt(rcv_message_cipher, key, iv);
         string snd_message;
+        vector<unsigned char> snd_message_cipher;
 
         if (login_user.username != "")
         {
             name_to_fd[login_user.username] = client_fd;
         }
 
-        # if DEBUG == 1
         cout << "[\033[1mClient\033[0m] " << rcv_message << endl;
-        # endif
 
         if (rcv_message.find("[Exit]") != string::npos && rcv_message.find("[Chatting]") == string::npos)
         {
@@ -66,53 +99,51 @@ void *handleClient(void *new_fd)
 
         if (rcv_message.find("[User Registration]") != string::npos)
         {
-            snd_message = userRegistration(rcv_message);
+            snd_message = userRegistration(rcv_message, key, iv);
         }
         else if (rcv_message.find("[User Login]") != string::npos)
         {
-            snd_message = UserLogin(rcv_message, login_user, client_fd);
+            snd_message = UserLogin(rcv_message, login_user, client_fd, key, iv);
         }
         else if (rcv_message.find("[User Logout]") != string::npos)
         {
-            snd_message = UserLogout(login_user, client_fd);
+            snd_message = UserLogout(login_user, client_fd, key, iv);
         }
-        else if(rcv_message.find("[Chatting]") != string::npos)
+        else if (rcv_message.find("[Chatting]") != string::npos)
         {
             // chatting
-            chatting(rcv_message, client_fd, login_user);
+            chatting(rcv_message, client_fd, login_user, key, iv);
             continue;
         }
         else if (rcv_message.find("[Info]") != string::npos)
         {
-            snd_message = getInfo(rcv_message, login_user);
+            snd_message = getInfo(rcv_message, login_user, key, iv);
         }
         else
         {
             // send back to client a message
-            # if DEBUG == 1
             cout << "[\033[1mServer\033[0m] " << rcv_message << endl;
-            # endif
         }
 
-        # if DEBUG == 1
         cout << "[\033[1mServer\033[0m] " << snd_message << endl;
-        # endif
-        send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
 
-        bzero(buffer, 4096);
+        snd_message_cipher = encrypt(snd_message, key, iv);
+        send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
+        bzero(buffer, sizeof(buffer));
     }
-    
-    if(login_user.username != "")
+
+    if (login_user.username != "")
     {
         name_to_fd[login_user.username] = 0;
     }
-    
+
     cout << "Client disconnected, socket: " << client_fd << endl;
     close(client_fd); // 關閉 client socket
     return nullptr;
 }
 
-string userRegistration(string rcv_message)
+string userRegistration(string rcv_message, unsigned char *key, unsigned char *iv)
 {
     // rcv_message = "[User Registration] username:password"
     // User Registration
@@ -165,7 +196,7 @@ string userRegistration(string rcv_message)
     return message;
 }
 
-string UserLogin(string rcv_message, User &login_user, int client_fd)
+string UserLogin(string rcv_message, User &login_user, int client_fd, unsigned char *key, unsigned char *iv)
 {
     // User Login
     // get username and pwd
@@ -184,14 +215,14 @@ string UserLogin(string rcv_message, User &login_user, int client_fd)
         return "[\033[1;31mError\033[0m] Invalid message format";
     }
 
-    if(account.username.empty() || account.password.empty())
+    if (account.username.empty() || account.password.empty())
     {
         message = "[\033[1;31mError\033[0m] Username or password cannot be empty";
         cout << "[\033[1mServer\033[0m] " << message << endl;
         return message;
     }
 
-    if(name_to_fd[account.username] != 0)
+    if (name_to_fd[account.username] != 0)
     {
         message = "[\033[1;31mError\033[0m] A user can only login one device";
         cout << "[\033[1mServer\033[0m] " << message << endl;
@@ -256,7 +287,7 @@ string UserLogin(string rcv_message, User &login_user, int client_fd)
     return message;
 }
 
-string UserLogout(User &login_user, int client_fd)
+string UserLogout(User &login_user, int client_fd, unsigned char *key, unsigned char *iv)
 {
     // User Logout
     // check if the user is logined
@@ -269,7 +300,8 @@ string UserLogout(User &login_user, int client_fd)
     else
     {
         // remove original name_to_fd
-        if (name_to_fd[login_user.username] != 0)name_to_fd[login_user.username] = 0;
+        if (name_to_fd[login_user.username] != 0)
+            name_to_fd[login_user.username] = 0;
 
         login_user.username = "";
         login_user.password = "";
@@ -279,8 +311,21 @@ string UserLogout(User &login_user, int client_fd)
     return message;
 }
 
-string getInfo(string rcv_message, User &login_user)
+string getInfo(string rcv_message, User &login_user, unsigned char *key, unsigned char *iv)
 {
+    // shoe aes key and iv
+    cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
+    for (int i = 0; i < 32; i++)
+    {
+        printf("%02x", key[i]);
+    }
+    cout << endl;
+    cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
+    for (int i = 0; i < 16; i++)
+    {
+        printf("%02x", iv[i]);
+    }
+    cout << endl;
     // get info
     string message;
     if (rcv_message.find("[Info] Get Username") != string::npos)
@@ -293,59 +338,78 @@ string getInfo(string rcv_message, User &login_user)
         {
             message = "[\033[1;32mSuccess\033[0m] " + login_user.username;
         }
-    }else if(rcv_message.find("[Info][Online]") != string::npos){
+    }
+    else if (rcv_message.find("[Info][Online]") != string::npos)
+    {
         rcv_message = rcv_message.substr(rcv_message.find("] ") + 2);
         string target_username = rcv_message;
         cout << target_username << endl;
-        
-        if(name_to_fd[target_username] == 0){
+
+        if (name_to_fd[target_username] == 0)
+        {
             message = "[\033[1;31mError\033[0m] User is offline";
-        }else{
+        }
+        else
+        {
             message = "[\033[1;32mSuccess\033[0m] User is online";
         }
     }
     return message;
 }
 
-void chatting(string snd_message, int client_fd, User login_user){
+void chatting(string snd_message, int client_fd, User login_user, unsigned char *key, unsigned char *iv)
+{
     // invite a user to chat
-    if(snd_message.find("[Chatting][Invite]") != string::npos){
+    if (snd_message.find("[Chatting][Invite]") != string::npos)
+    {
         // [Chatting][Invite] username:target_username
         regex pattern(R"(\[Chatting\]\[Invite\]\s+(.+):(.+))");
         smatch match;
         string inviter;
         string accepter;
 
-        if(regex_search(snd_message, match, pattern)){
+        if (regex_search(snd_message, match, pattern))
+        {
             inviter = match[1];
             accepter = match[2];
-        }else{
+        }
+        else
+        {
             return;
         }
 
         waiting_for_chatting.insert(inviter);
 
-        if(waiting_for_chatting.find(accepter) != waiting_for_chatting.end()){
+        if (waiting_for_chatting.find(accepter) != waiting_for_chatting.end())
+        {
             // send to accepter
             int accepter_fd = name_to_fd[accepter];
             string snd_message = "[Chatting][Start] " + accepter + ":" + inviter;
-            send(accepter_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+            vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+            send(accepter_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
             // send to inviter
             snd_message = "[Chatting][Start] " + inviter + ":" + accepter;
-            send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
-        }else{
+            snd_message_cipher = encrypt(snd_message, key, iv);
+            send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+        }
+        else
+        {
             // send to inviter
             string snd_message = "[Chatting][Wait] " + inviter + ":" + accepter;
-            send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+            vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+            send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
         }
-    }else if(snd_message.find("[Chatting][Exit]") != string::npos){
+    }
+    else if (snd_message.find("[Chatting][Exit]") != string::npos)
+    {
         // [Chatting][Exit] me:target
         string me;
         string target;
         regex pattern(R"(\[Chatting\]\[Exit\]\s+(.+):(.+))");
         smatch match;
-        if(regex_search(snd_message, match, pattern)){
+        if (regex_search(snd_message, match, pattern))
+        {
             me = match[1];
             target = match[2];
         }
@@ -354,23 +418,31 @@ void chatting(string snd_message, int client_fd, User login_user){
         // request target to exit
         waiting_for_chatting.erase(target);
         string snd_message = "[Chatting][Exit]";
-        send(target_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+
+        vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+        send(target_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
         // send back to me
         waiting_for_chatting.erase(me);
-        send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
-    }else if(snd_message.find("[Chatting][Message]") != string::npos){
+        snd_message = "[Chatting][Exit]";
+        snd_message_cipher = encrypt(snd_message, key, iv);
+        send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+    }
+    else if (snd_message.find("[Chatting][Message]") != string::npos)
+    {
         // [Chatting][Message] sender:receiver:message
         regex pattern(R"(\[Chatting\]\[Message\]\s+(.+):(.+):(.+))");
         smatch match;
-        if(regex_search(snd_message, match, pattern)){
+        if (regex_search(snd_message, match, pattern))
+        {
             string sender = match[1];
             string receiver = match[2];
             string message = match[3];
 
             int receiver_fd = name_to_fd[receiver];
             string snd_message = "[Chatting][Message] " + sender + ":" + receiver + ":" + message;
-            send(receiver_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+            vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+            send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
         }
     }
     return;

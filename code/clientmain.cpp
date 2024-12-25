@@ -1,5 +1,9 @@
 #include "client.hpp"
 #include "src/UI.hpp"
+#include "src/crypt.hpp"
+
+static unsigned char key[32] = {0};
+static unsigned char iv[16] = {0};
 
 int main(int argc, char *argv[])
 {
@@ -50,24 +54,39 @@ int main(int argc, char *argv[])
     // If connected, start sending and receiving data
     system("clear");
     title(1);
-    cout << "Connected to the server..." << endl
-         << endl;
+    cout << "Connected to the server..." << endl;
+    cout << endl;
     cout << "[\033[1;32mSuccess\033[0m] Connection established" << endl;
     cout << "[\033[1mServer IP\033[0m] " << server_ip << endl;
     cout << "[\033[1mServer Port\033[0m] " << server_port << endl;
-    cout << endl
-         << ">>> Press ENTER to continue" << endl;
+    cout << endl;
+    cout << ">>> Press ENTER to continue" << endl;
     cin.get();
 
-    // receive data from the server
-    string username = getNowUsername(client_fd);
-    
+    // get the AES key and IV
     char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t bytes_received = recv(client_fd, key, 32, 0);
+    if (bytes_received < 0)
+    {
+        printError("Receiving data from the server");
+        return 1;
+    }
+    bytes_received = recv(client_fd, iv, 16, 0);
+    if (bytes_received < 0)
+    {
+        printError("Receiving data from the server");
+        return 1;
+    }
+    // receive data from the server
+    string username = getNowUsername(client_fd, key, iv);
+    
 
     while (1)
     {
         system("clear");
         title(1);
+
         string choice;
         if (username.empty())
         {
@@ -77,7 +96,10 @@ int main(int argc, char *argv[])
         {
             choice = clientMainMenu(username, 1);
         }
-        string client_message;
+        string snd_message;
+        vector<unsigned char> snd_message_cipher;
+        string rcv_message;
+        vector<unsigned char> rcv_message_cipher;
 
         if (choice == "R")
         {
@@ -94,8 +116,8 @@ int main(int argc, char *argv[])
                 title(1);
 
                 // enter data
-                client_message = userRegistration(username);
-                if (client_message.empty())
+                snd_message = userRegistration(username);
+                if (snd_message.empty())
                 {
                     cout << ">>> Press ENTER to continue" << endl;
                     cin.get();
@@ -103,16 +125,19 @@ int main(int argc, char *argv[])
                 }
 
                 // send to server
-                send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
+                snd_message_cipher = encrypt(snd_message, key, iv);
+                send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
                 // receive from server
-                int bytes_received = recv(client_fd, buffer, 4096, 0);
+                ssize_t bytes_received = recv(client_fd, buffer, 4096, 0);
                 if (bytes_received < 0)
                 {
                     printError("Receiving data from the server");
                     break;
                 }
-                string rcv_message = string(buffer, 0, bytes_received);
+                rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+                // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
+                rcv_message = decrypt(rcv_message_cipher, key, iv);
                 cout << rcv_message << endl;
                 cout << endl;
                 cout << ">>> Press ENTER to continue" << endl;
@@ -128,8 +153,8 @@ int main(int argc, char *argv[])
                 system("clear");
                 title(1);
                 // enter data
-                client_message = UserLogin(username);
-                if (client_message.empty())
+                snd_message = UserLogin(username);
+                if (snd_message.empty())
                 {
                     cout << ">>> Press ENTER to continue" << endl;
                     cin.get();
@@ -137,18 +162,21 @@ int main(int argc, char *argv[])
                 }
 
                 // send to server
-                send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
+                snd_message_cipher = encrypt(snd_message, key, iv);
+                send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
                 // receive from server
-                int bytes_received = recv(client_fd, buffer, 4096, 0);
+                ssize_t bytes_received = recv(client_fd, buffer, 4096, 0);
                 if (bytes_received < 0)
                 {
                     printError("Receiving data from the server");
                     continue;
                 }
 
-                string rcv_message = string(buffer, 0, bytes_received);
-
+                rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+                // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
+                rcv_message = decrypt(rcv_message_cipher, key, iv);
+                
                 if (rcv_message.find("[\033[1;31mError\033[0m]") != string::npos)
                 {
                     cout << rcv_message << endl;
@@ -157,7 +185,7 @@ int main(int argc, char *argv[])
                 {
                     // check if the user is logined
                     cout << rcv_message << endl;
-                    username = getNowUsername(client_fd);
+                    username = getNowUsername(client_fd, key, iv);
                 }
 
                 cout << endl;
@@ -170,8 +198,8 @@ int main(int argc, char *argv[])
         else if (choice == "2" && !username.empty())
         {
             // User Logout
-            client_message = "[User Logout]";
-            if (client_message.empty())
+            snd_message = "[User Logout]";
+            if (snd_message.empty())
             {
                 cout << ">>> Press ENTER to continue" << endl;
                 cin.get();
@@ -179,11 +207,14 @@ int main(int argc, char *argv[])
             }
 
             // send to server
-            send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
+            snd_message_cipher = encrypt(snd_message, key, iv);
+            send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
             // receive from server
-            int bytes_received = recv(client_fd, buffer, 4096, 0);
-            string rcv_message = string(buffer, 0, bytes_received);
+            ssize_t bytes_received = recv(client_fd, buffer, 4096, 0);
+            rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+            // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
+            rcv_message = decrypt(rcv_message_cipher, key, iv);
 
             if (bytes_received < 0)
             {
@@ -192,7 +223,7 @@ int main(int argc, char *argv[])
             }
 
             // check if the user is logined
-            username = getNowUsername(client_fd);
+            username = getNowUsername(client_fd, key, iv);
 
             cout << rcv_message << endl;
             cout << endl;
@@ -201,7 +232,7 @@ int main(int argc, char *argv[])
         }
         else if(choice == "3" && !username.empty())
         {
-            chatting(client_fd, username);
+            chatting(client_fd, username, key, iv);
             continue;
         }
         else
@@ -212,18 +243,6 @@ int main(int argc, char *argv[])
             cin.get();
             continue;
         }
-
-        // cout << "[\033[1mClient\033[0m] " << client_message << endl;
-
-        // // Send the message to the server
-        // send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
-
-        // int bytes_received = recv(client_fd, buffer, 4096, 0);
-        // if(bytes_received < 0){
-        //     printError("Receiving data from the server");
-        //     break;
-        // }
-        // cout << "[\033[1mServer\033[0m] " << string(buffer, 0, bytes_received) << endl;
     }
 
     close(client_fd);

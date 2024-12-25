@@ -1,5 +1,9 @@
 #include "server.hpp"
 #include "src/UI.hpp"
+#include "src/crypt.hpp"
+
+static unsigned char key[32] = {0};
+static unsigned char iv[16] = {0};
 
 int main(int argc, char *argv[]){
     srand(time(NULL));
@@ -65,6 +69,20 @@ int main(int argc, char *argv[]){
     struct sockaddr_in accept_address;
     socklen_t accept_addressSize = sizeof(accept_address);
 
+    // generate AES key and IV
+    generateAESKeyAndIV(key, iv);
+
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
+    // for(int i = 0; i < 32; i++){
+    //     printf("%02x", key[i]);
+    // }
+    // cout << endl;
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
+    // for(int i = 0; i < 16; i++){
+    //     printf("%02x", iv[i]);
+    // }
+    // cout << endl;
+
     while(1){
         // accept the call
         int client_fd = accept(server_fd, (struct sockaddr*)&accept_address, &accept_addressSize);
@@ -76,12 +94,16 @@ int main(int argc, char *argv[]){
         cout << "[\033[1;33mNew connection\033[0m][\033[1mClient IP\033[0m] " << inet_ntoa(accept_address.sin_addr) << endl;
         cout << "[\033[1;33mNew connection\033[0m][\033[1mClient Port\033[0m] " << ntohs(accept_address.sin_port) << endl;
         
-        int* new_client_fd = new int(client_fd);
+        ClientArgs *client_arg = new ClientArgs();
+        client_arg->client_fd = client_fd;
+        memcpy(client_arg->aes_key, key, 32);
+        memcpy(client_arg->aes_iv, iv, 16);
+
         pthread_t client_thread;
 
-        if(pthread_create(&client_thread, nullptr, handleClient, (void*)new_client_fd) != 0){
+        if(pthread_create(&client_thread, nullptr, handleClient, (void*)client_arg) != 0){
             printError("Creating a thread");
-            delete new_client_fd;
+            delete client_arg;
             close(client_fd);
         }
 

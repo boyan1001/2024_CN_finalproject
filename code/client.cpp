@@ -1,5 +1,6 @@
 #include "client.hpp"
 #include "src/UI.hpp"
+#include "src/crypt.hpp"
 
 static queue<string> chatting_message;
 
@@ -64,27 +65,65 @@ string UserLogin(string &username)
     return message;
 }
 
-string getNowUsername(int client_fd)
+string getNowUsername(int client_fd, unsigned char *key, unsigned char *iv)
 {
-    char buffer[4096];
-    string client_message = "[Info] Get Username";
-    send(client_fd, client_message.c_str(), client_message.size() + 1, 0);
-    int bytes_received = recv(client_fd, buffer, 4096, 0);
-    if (bytes_received < 0)
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
+    // for(int i = 0; i < 32; i++){
+    //     printf("%02x", key[i]);
+    // }
+    // cout << endl;
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
+    // for(int i = 0; i < 16; i++){
+    //     printf("%02x", iv[i]);
+    // }
+    // cout << endl;
+
+    char buffer[4096] = {0}; // 確保 buffer 被初始化
+    string snd_message = "[Info] Get Username";
+    vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+    // cout << "snd_message_cipher size: " << snd_message_cipher.size() << endl;
+
+    // 傳送加密訊息
+    send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
+    // 接收加密的回覆
+    ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer), 0);
+    // cout << "bytes_received: " << bytes_received << endl;
+    if (bytes_received <= 0)
     {
-        printError("Receiving data from the server");
+        cerr << "Failed to receive data from the client" << endl;
         return "";
     }
-    if (string(buffer, 0, bytes_received).find("[\033[1;31mError\033[0m]") != string::npos)
+
+    // 解密收到的訊息
+    vector<unsigned char> rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+    // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // 去除沒用的字元
+    // cout << "rcv_message_cipher: " << rcv_message_cipher << endl;
+    // cout << "rcv_message_cipher size: " << rcv_message_cipher.size() << endl;
+    string rcv_message = decrypt(rcv_message_cipher, key, iv);
+    // cout << "rcv_message: " << rcv_message << endl;
+    if (rcv_message.empty())
+    {
+        cerr << "Failed to decrypt message from client" << endl;
+        return "";
+    }
+
+    // 判斷是否有錯誤訊息
+    if (rcv_message.find("[\033[1;31mError\033[0m]") != string::npos)
     {
         return "";
     }
-    else
+
+    // 從解密後的訊息中提取用戶名
+    size_t space_pos = rcv_message.find(" ");
+    if (space_pos == string::npos)
     {
-        string username = string(buffer, 0, bytes_received);
-        username = username.substr(username.find(" ") + 1);
-        return string(buffer, 0, bytes_received).substr(string(buffer, 0, bytes_received).find(" ") + 1);
+        cerr << "Invalid message format, no space found." << endl;
+        return "";
     }
+
+    string username = rcv_message.substr(space_pos + 1);
+    return username;
 }
 
 string getIPfromDomain(string domain)
@@ -110,20 +149,22 @@ string getIPfromDomain(string domain)
 
 void returnMessage()
 {
-    cout << "[\033[1;36mStatus\033[0m] Closing the connection" << endl;
+    // cout << "[\033[1;36mStatus\033[0m] Closing the connection" << endl;
     cout << "Exiting the program..." << endl;
     return;
 }
 
-void chatting(int client_fd, string username)
+void chatting(int client_fd, string username, unsigned char *key, unsigned char *iv)
 {
     system("clear");
     title(1);
 
     // variables
     string snd_message;
+    vector<unsigned char> snd_message_cipher;
     int bytes_received;
     string rcv_message;
+    vector<unsigned char> rcv_message_cipher;
     string target_username = chatMenu(username);
     cout << endl;
     char buffer[4096];
@@ -131,14 +172,18 @@ void chatting(int client_fd, string username)
 
     // check if target online
     snd_message = "[Info][Online] " + target_username;
-    send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+    snd_message_cipher = encrypt(snd_message, key, iv);
+    send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
     bytes_received = recv(client_fd, buffer, 4096, 0);
-    rcv_message = string(buffer, 0, bytes_received);
+    rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+    // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
+    rcv_message = decrypt(rcv_message_cipher, key, iv);
 
     if (rcv_message.find("[\033[1;31mError\033[0m]") != string::npos)
     {
-        cout << target_username << " is \033[1;31moffline\033[0m. Please wait for it online." << endl
-             << endl;
+        cout << target_username << " is \033[1;31moffline\033[0m. Please wait for it online." << endl;
+        cout << endl;
         cout << ">>> Press ENTER to continue" << endl;
         cin.get();
         return;
@@ -146,33 +191,38 @@ void chatting(int client_fd, string username)
 
     // wait for connection
     snd_message = "[Chatting][Invite] " + username + ":" + target_username;
-    send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+    snd_message_cipher = encrypt(snd_message, key, iv);
+    send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
     memset(buffer, 0, sizeof(buffer));
     bytes_received = recv(client_fd, buffer, 4096, 0);
-    rcv_message = string(buffer, 0, bytes_received);
+    rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+    // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
+    rcv_message = decrypt(rcv_message_cipher, key, iv);
 
     if (rcv_message.find("[Chatting][Start]") != string::npos)
     {
-        cout << endl
-             << "Now you can chatting with \033[1m" << target_username << "\033[0m" << endl;
+        cout << endl;
+        cout << "Now you can chatting with \033[1m" << target_username << "\033[0m" << endl;
         cout << ">>> Press ENTER to continue" << endl;
         cin.get();
     }
     else
     {
-        cout << endl
-             << "Waiting \033[1m" << target_username << "\033[0m to accept your invitation..." << endl;
+        cout << endl;
+        cout << "Waiting \033[1m" << target_username << "\033[0m to accept your invitation..." << endl;
 
         while (1)
         {
             int bytes_received = recv(client_fd, buffer, 4096, 0);
-            string rcv_message = string(buffer, 0, bytes_received);
+            rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+            // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
+            rcv_message = decrypt(rcv_message_cipher, key, iv);
 
             if (rcv_message.find("[Chatting][Start]") != string::npos)
             {
-                cout << endl
-                     << "Now you can chatting with \033[1m" << target_username << "\033[0m" << endl;
+                cout << endl;
+                cout << "Now you can chatting with \033[1m" << target_username << "\033[0m" << endl;
                 cout << ">>> Press ENTER to continue" << endl;
                 cin.get();
                 break;
@@ -181,7 +231,7 @@ void chatting(int client_fd, string username)
     }
 
     // Enter the chatroom
-    chatRoom(client_fd, username, target_username);
+    chatRoom(client_fd, username, target_username, key, iv);
 
     return;
 }
@@ -192,24 +242,30 @@ void *chatingRcvThread(void *arg)
     string me = args->me;
     string target = args->target;
     int client_fd = args->client_fd;
+    unsigned char *key = args->aes_key;
+    unsigned char *iv = args->aes_iv;
     bool *exitFlag = args->exitFlag;
 
     string rcv_message;
+    vector<unsigned char> rcv_message_cipher;
     char buffer[4096];
+    
 
     while (1)
     {
         memset(buffer, 0, sizeof(buffer));
 
         int bytes_received = recv(client_fd, buffer, 4096, 0);
-        rcv_message = string(buffer, 0, bytes_received);
+        rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+        // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
+        rcv_message = decrypt(rcv_message_cipher, key, iv);
 
         if (rcv_message.find("[Chatting][Exit]") != string::npos)
         {
             printChatRoom(me);
-            cout << endl
-                 << "\033[1m" << target << "\033[0m has left the chatroom" << endl
-                 << endl;
+            cout << endl;
+            cout << "\033[1;33m" << target << "\033[0;33m has left the chatroom\033[0m" << endl;
+            cout << endl;
             cout << ">>> Press ENTER to continue" << endl;
 
             // exit the chatroom
@@ -229,8 +285,8 @@ void *chatingRcvThread(void *arg)
 
                 // print the message
                 printChatRoom(me);
-                cout << endl
-                     << "You: " << flush;
+                cout << endl;
+                cout << "You: " << flush;
             }
         }
     }
@@ -238,7 +294,7 @@ void *chatingRcvThread(void *arg)
     pthread_exit(nullptr);
 }
 
-void chatRoom(int client_fd, string me, string target)
+void chatRoom(int client_fd, string me, string target, unsigned char *key, unsigned char *iv)
 {
     bool exit = false;
 
@@ -247,6 +303,8 @@ void chatRoom(int client_fd, string me, string target)
     args->target = target;
     args->client_fd = client_fd;
     args->exitFlag = &exit;
+    memcpy(args->aes_key, key, 32);
+    memcpy(args->aes_iv, iv, 16);
 
     // open rcv thread
     pthread_t rcv_thread;
@@ -263,14 +321,17 @@ void chatRoom(int client_fd, string me, string target)
             break;
         }
         string snd_message;
+        vector<unsigned char> snd_message_cipher;
+        string rcv_message;
+        vector<unsigned char> rcv_message_cipher;
         char buffer[4096];
 
         // print the chatroom
         if (!exit)
         {
             printChatRoom(me);
-            cout << endl
-                 << "You: " << flush;
+            cout << endl;
+            cout << "You: " << flush;
         }
         getline(cin, snd_message);
 
@@ -278,7 +339,8 @@ void chatRoom(int client_fd, string me, string target)
         if (snd_message == "<exit>")
         {
             snd_message = "[Chatting][Exit] " + me + ":" + target;
-            send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+            snd_message_cipher = encrypt(snd_message, key, iv);
+            send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
             // exit the chatroom
             exit = true;
@@ -293,7 +355,8 @@ void chatRoom(int client_fd, string me, string target)
             // send message
             chatting_message.push("\033[1;36mYou\033[0;36m: " + snd_message + "\033[0m");
             snd_message = "[Chatting][Message] " + me + ":" + target + ":" + snd_message;
-            send(client_fd, snd_message.c_str(), snd_message.size() + 1, 0);
+            snd_message_cipher = encrypt(snd_message, key, iv);
+            send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
         }
     }
 

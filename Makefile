@@ -1,6 +1,6 @@
 all:
-	-g++ -pthread -o server.o testserver.cpp
-	-g++ -pthread -o client.o testclient.cpp
+	-g++ testclient.cpp -o client.o -lm -lpthread -lssl -lcrypto
+	-g++ testserver.cpp -o server.o -lm -lpthread -lssl -lcrypto
 
 clean:
 	rm -f *.o
