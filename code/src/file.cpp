@@ -40,14 +40,14 @@ bool sendFile(int client_fd, string file_path, string sender, string receiver, u
         // for(int i = 0; i < file_content.size(); i++){
         //     printf("%02x", file_content[i]);
         // }
-        cout << endl;
+        // cout << endl;
         vector<unsigned char> file_content_cipher = encrypt_file(file_content, key, iv);
         // cout << "[File] file_content_cipher size: " << file_content_cipher.size() << endl;
         // cout << "[File] file_content_cipher: ";
         // for(int i = 0; i < file_content_cipher.size(); i++){
         //     printf("%02x", file_content_cipher[i]);
         // }
-        cout << endl;
+        // cout << endl;
 
         int cipher_size = file_content_cipher.size();
 
@@ -117,7 +117,7 @@ bool recvFile(int client_fd, string file_path, int file_size, string sender, str
         // for(int i = 0; i < rcv_file_message.size(); i++){
         //     printf("%02x", rcv_file_message[i]);
         // }
-        cout << endl;
+        // cout << endl;
 
         if (rcv_file_message.empty()) {
             file.close();
@@ -160,7 +160,7 @@ void handleFile(int client_fd, int receiver_fd, int file_size, unsigned char *ke
         // for(int i = 0; i < rcv_file_message.size(); i++){
         //     printf("%02x", rcv_file_message[i]);
         // }
-        cout << endl;
+        // cout << endl;
 
         if (rcv_file_message.empty()) {
             return;
