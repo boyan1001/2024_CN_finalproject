@@ -1,6 +1,7 @@
 #include "server.hpp"
 #include "src/UI.hpp"
 #include "src/crypt.hpp"
+#include "src/file.hpp"
 
 // get ip addresses from external interface to the server
 string getIPAddress()
@@ -465,7 +466,7 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
 
         // file
         if(content == "start"){
-            sendFile(client_fd, receiver_fd, file_size, key, iv);
+            handleFile(client_fd, receiver_fd, file_size, key, iv);
         }
         return;
     }   
@@ -489,53 +490,3 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
     return;
 }
 
-void sendFile(int client_fd, int receiver_fd, int file_size, unsigned char *key, unsigned char *iv){
-    char buffer[4096];
-    int bytes_received;
-    string rcv_message;
-    vector<unsigned char> rcv_message_cipher;
-    vector<unsigned char> rcv_message_cipher_file;
-    vector<unsigned char> snd_message_cipher;
-
-    // receive file content
-    while(file_size > 0){
-        memset(buffer, 0, sizeof(buffer));
-        bytes_received = recv(client_fd, buffer, 4096, 0);
-        rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
-        // cout << "[File] rcv_message_cipher size: " << rcv_message_cipher.size() << endl;
-        // cout << "[File] bytes_received: " << bytes_received << endl;
-        // cout << "[File] rcv_message_cipher: ";
-        for(int i = 0; i < rcv_message_cipher.size(); i++){
-            printf("%02x", rcv_message_cipher[i]);
-        }
-        cout << endl;
-        rcv_message = decrypt(rcv_message_cipher, key, iv);
-        rcv_message_cipher_file = encrypt_file(rcv_message_cipher, key, iv);
-
-        // cout << "[File] rcv_message size: " << rcv_message.size() << endl;
-        // cout << "[File] rcv_message: " << rcv_message << endl;
-        // cout << "[File] rcv_message_cipher_file size: " << rcv_message_cipher_file.size() << endl;
-        // cout << "[File] rcv_message_cipher_file: ";
-        for(int i = 0; i < rcv_message_cipher_file.size(); i++){
-            printf("%02x", rcv_message_cipher_file[i]);
-        }
-        cout << endl;
-
-        if(rcv_message.empty()){
-            return;
-        }
-
-        // send to receiver;
-        snd_message_cipher = encrypt(rcv_message, key, iv);
-        // cout << "[File] snd_message_cipher size: " << snd_message_cipher.size() << endl;
-        // cout << "[File] snd_message_cipher: ";
-        for(int i = 0; i < snd_message_cipher.size(); i++){
-            printf("%02x", snd_message_cipher[i]);
-        }
-        cout << endl;
-        send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
-        // cout << "[File] Send to receiver" << endl;
-        file_size -= bytes_received;
-    }
-    return;
-}

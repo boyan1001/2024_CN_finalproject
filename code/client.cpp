@@ -1,6 +1,7 @@
 #include "client.hpp"
 #include "src/UI.hpp"
 #include "src/crypt.hpp"
+#include "src/file.hpp"
 
 static queue<string> chatting_message;
 
@@ -302,7 +303,7 @@ void *chatingRcvThread(void *arg)
         
             // receive file
             if(recvFile(client_fd, file_path, file_size, sender, receiver, key, iv)){
-                chatting_message.push("\033[1;36m" + sender + "\033[0;36m: send a file (\033[1;36m" + file_name + "\033[0;36m)\033[0m");
+                chatting_message.push("\033[1m" + sender + "\033[0m: send a file (\033[1;36m" + file_name + "\033[0m)");
             }else{
                 chatting_message.push("\033[1;31mError\033[0;31m: cannot receive a file (\033[1;31m" + file_name + "\033[0;31m)\033[0m");
             }
@@ -467,110 +468,4 @@ bool isIP(string ip)
 {
     regex pattern(R"(\d+\.\d+\.\d+\.\d+)");
     return regex_match(ip, pattern);
-}
-
-bool sendFile(int client_fd, string file_path, string sender, string receiver, unsigned char *key, unsigned char *iv){
-    // send file
-    ifstream file(file_path, ios::binary);
-    if(!file){
-        printError("File not found");
-        return false;
-    }
-
-    // get file size
-    file.seekg(0, ios::end);
-    int file_size = file.tellg();
-    file.seekg(0, ios::beg);
-
-    // get file name
-    string file_name = file_path.substr(file_path.find_last_of("/") + 1);
-
-    // send file size
-    string header = "[Chatting][File] " + sender + ":" + receiver + ":" + file_name;
-    string snd_message = header + ":" + to_string(file_size) + ":start";
-    vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
-    send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
-
-    // send file content
-    char buffer[4096];
-    while(file_size > 0){
-        // cout << "[File] file_size: " << file_size << endl;
-        file.read(buffer, 4096);
-        std::streamsize actual_read = file.gcount();
-        if(actual_read <= 0){
-            break;
-        }
-
-        vector<unsigned char> file_content(buffer, buffer + actual_read);
-        // cout << "[File] file_content size: " << file_content.size() << endl;
-        // cout << "[File] file_content: ";
-        for(int i = 0; i < file_content.size(); i++){
-            printf("%02x", file_content[i]);
-        }
-        cout << endl;
-        vector<unsigned char> file_content_cipher = encrypt_file(file_content, key, iv);
-        // cout << "[File] file_content_cipher size: " << file_content_cipher.size() << endl;
-        // cout << "[File] file_content_cipher: ";
-        for(int i = 0; i < file_content_cipher.size(); i++){
-            printf("%02x", file_content_cipher[i]);
-        }
-        cout << endl;
-        send(client_fd, file_content_cipher.data(), file_content_cipher.size(), 0);
-        file_size -= actual_read;
-    }
-
-    file.close();
-    return true;
-}
-
-bool recvFile(int client_fd, string file_path, int file_size, string sender, string receiver, unsigned char *key, unsigned char *iv) {
-    string stem = filesystem::path(file_path).stem().string();
-    string parent_path = filesystem::path(file_path).parent_path().string();
-    string extension = filesystem::path(file_path).extension().string();
-    char buffer[4096];
-    vector<unsigned char> rcv_message_cipher;
-    vector<unsigned char> rcv_file_message;
-    string rcv_message;
-    int bytes_received;
-
-    // Ensure the directory exists
-    filesystem::path dir = filesystem::path(file_path).parent_path();
-    if (!filesystem::exists(dir)) {
-        filesystem::create_directories(dir);
-    }
-
-    // Handle file name conflicts
-    if (ifstream(file_path)) {
-        int copies = 1;
-        while (ifstream(parent_path + "/" + stem + " (" + to_string(copies) + ")" + extension)) {
-            copies++;
-        }
-        file_path = parent_path + "/" + stem + " (" + to_string(copies) + ")" + extension;
-    }
-
-    ofstream file(file_path, ios::binary);
-    if (!file.is_open()) {
-        printError("Failed to open file for writing");
-        return false;
-    }
-
-    while (file_size > 0) {
-        bytes_received = recv(client_fd, buffer, 4096, 0);
-        rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
-        rcv_file_message = decrypt_file(rcv_message_cipher, key, iv);
-
-        // cout << "[File] rcv_file_message size: " << rcv_file_message.size() << endl;
-        // cout << "[File] rcv_file_message: ";
-        for(int i = 0; i < rcv_file_message.size(); i++){
-            printf("%02x", rcv_file_message[i]);
-        }
-        cout << endl;
-
-        file.write(reinterpret_cast<const char*>(rcv_file_message.data()), rcv_file_message.size());
-        file_size -= rcv_file_message.size();
-        // cout << "[File] file_size: " << file_size << endl;
-    }
-
-    file.close();
-    return true;
 }
