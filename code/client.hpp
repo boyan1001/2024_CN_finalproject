@@ -4,6 +4,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <cmath>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -56,3 +59,7 @@ void printMessage();
 void printChatRoom(string username);
 
 bool isIP(string ip);
+
+bool sendFile(int client_fd, string file_path, string sender, string receiver, unsigned char *key, unsigned char *iv);
+
+bool recvFile(int client_fd, string file_path, int file_size, string sender, string receiver, unsigned char *key, unsigned char *iv);

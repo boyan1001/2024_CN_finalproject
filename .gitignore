@@ -39,3 +39,6 @@ logs/
 
 # test
 test*.cpp
+
+# client_data
+code/data/client/*

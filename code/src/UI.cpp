@@ -74,6 +74,7 @@ string chatMenu(string username){
     statusMessage(username);
     cout << endl;
     cout << "Enter the user name you want to chat: " << endl;
+    cout << ">>> ";
     getline(cin, username);
     return username;
 }

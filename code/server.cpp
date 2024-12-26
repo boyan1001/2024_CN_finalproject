@@ -314,18 +314,18 @@ string UserLogout(User &login_user, int client_fd, unsigned char *key, unsigned 
 string getInfo(string rcv_message, User &login_user, unsigned char *key, unsigned char *iv)
 {
     // shoe aes key and iv
-    cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
-    for (int i = 0; i < 32; i++)
-    {
-        printf("%02x", key[i]);
-    }
-    cout << endl;
-    cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
-    for (int i = 0; i < 16; i++)
-    {
-        printf("%02x", iv[i]);
-    }
-    cout << endl;
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     printf("%02x", key[i]);
+    // }
+    // cout << endl;
+    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
+    // for (int i = 0; i < 16; i++)
+    // {
+    //     printf("%02x", iv[i]);
+    // }
+    // cout << endl;
     // get info
     string message;
     if (rcv_message.find("[Info] Get Username") != string::npos)
@@ -357,10 +357,10 @@ string getInfo(string rcv_message, User &login_user, unsigned char *key, unsigne
     return message;
 }
 
-void chatting(string snd_message, int client_fd, User login_user, unsigned char *key, unsigned char *iv)
+void chatting(string rcv_message, int client_fd, User login_user, unsigned char *key, unsigned char *iv)
 {
     // invite a user to chat
-    if (snd_message.find("[Chatting][Invite]") != string::npos)
+    if (rcv_message.find("[Chatting][Invite]") != string::npos)
     {
         // [Chatting][Invite] username:target_username
         regex pattern(R"(\[Chatting\]\[Invite\]\s+(.+):(.+))");
@@ -368,7 +368,7 @@ void chatting(string snd_message, int client_fd, User login_user, unsigned char 
         string inviter;
         string accepter;
 
-        if (regex_search(snd_message, match, pattern))
+        if (regex_search(rcv_message, match, pattern))
         {
             inviter = match[1];
             accepter = match[2];
@@ -401,14 +401,14 @@ void chatting(string snd_message, int client_fd, User login_user, unsigned char 
             send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
         }
     }
-    else if (snd_message.find("[Chatting][Exit]") != string::npos)
+    else if (rcv_message.find("[Chatting][Exit]") != string::npos)
     {
         // [Chatting][Exit] me:target
         string me;
         string target;
         regex pattern(R"(\[Chatting\]\[Exit\]\s+(.+):(.+))");
         smatch match;
-        if (regex_search(snd_message, match, pattern))
+        if (regex_search(rcv_message, match, pattern))
         {
             me = match[1];
             target = match[2];
@@ -428,22 +428,114 @@ void chatting(string snd_message, int client_fd, User login_user, unsigned char 
         snd_message_cipher = encrypt(snd_message, key, iv);
         send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
     }
-    else if (snd_message.find("[Chatting][Message]") != string::npos)
+    else if(rcv_message.find("[Chatting][File]") != string::npos)
+    {
+        // data
+        string sender;
+        string receiver;
+        string file_name;
+        int file_size;
+        string content;
+
+        // [Chatting][File] sender:receiver:file_name:file_size:content
+        regex pattern(R"(\[Chatting\]\[File\]\s+(.+):(.+):(.+):(.+):(.+))");
+        smatch match;
+        if(regex_search(rcv_message, match, pattern)){
+            sender = match[1];
+            receiver = match[2];
+            file_name = match[3];
+            file_size = stoi(match[4]);
+            content = match[5];
+        }else{
+            return;
+        }
+
+        // check sender
+        if(sender != login_user.username){
+            return;
+        }
+        
+        // get receiver fd
+        int receiver_fd = name_to_fd[receiver];
+
+        // send to receiver
+        string snd_message = rcv_message;
+        vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+        send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
+        // file
+        if(content == "start"){
+            sendFile(client_fd, receiver_fd, file_size, key, iv);
+        }
+        return;
+    }   
+    else if (rcv_message.find("[Chatting][Message]") != string::npos)
     {
         // [Chatting][Message] sender:receiver:message
         regex pattern(R"(\[Chatting\]\[Message\]\s+(.+):(.+):(.+))");
         smatch match;
-        if (regex_search(snd_message, match, pattern))
+        if (regex_search(rcv_message, match, pattern))
         {
             string sender = match[1];
             string receiver = match[2];
             string message = match[3];
 
             int receiver_fd = name_to_fd[receiver];
-            string snd_message = "[Chatting][Message] " + sender + ":" + receiver + ":" + message;
+            string snd_message = rcv_message;
             vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
             send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
         }
+    }
+    return;
+}
+
+void sendFile(int client_fd, int receiver_fd, int file_size, unsigned char *key, unsigned char *iv){
+    char buffer[4096];
+    int bytes_received;
+    string rcv_message;
+    vector<unsigned char> rcv_message_cipher;
+    vector<unsigned char> rcv_message_cipher_file;
+    vector<unsigned char> snd_message_cipher;
+
+    // receive file content
+    while(file_size > 0){
+        memset(buffer, 0, sizeof(buffer));
+        bytes_received = recv(client_fd, buffer, 4096, 0);
+        rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+        // cout << "[File] rcv_message_cipher size: " << rcv_message_cipher.size() << endl;
+        // cout << "[File] bytes_received: " << bytes_received << endl;
+        // cout << "[File] rcv_message_cipher: ";
+        for(int i = 0; i < rcv_message_cipher.size(); i++){
+            printf("%02x", rcv_message_cipher[i]);
+        }
+        cout << endl;
+        rcv_message = decrypt(rcv_message_cipher, key, iv);
+        rcv_message_cipher_file = encrypt_file(rcv_message_cipher, key, iv);
+
+        // cout << "[File] rcv_message size: " << rcv_message.size() << endl;
+        // cout << "[File] rcv_message: " << rcv_message << endl;
+        // cout << "[File] rcv_message_cipher_file size: " << rcv_message_cipher_file.size() << endl;
+        // cout << "[File] rcv_message_cipher_file: ";
+        for(int i = 0; i < rcv_message_cipher_file.size(); i++){
+            printf("%02x", rcv_message_cipher_file[i]);
+        }
+        cout << endl;
+
+        if(rcv_message.empty()){
+            return;
+        }
+
+        // send to receiver;
+        snd_message_cipher = encrypt(rcv_message, key, iv);
+        // cout << "[File] snd_message_cipher size: " << snd_message_cipher.size() << endl;
+        // cout << "[File] snd_message_cipher: ";
+        for(int i = 0; i < snd_message_cipher.size(); i++){
+            printf("%02x", snd_message_cipher[i]);
+        }
+        cout << endl;
+        send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+        // cout << "[File] Send to receiver" << endl;
+        file_size -= bytes_received;
     }
     return;
 }

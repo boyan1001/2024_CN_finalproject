@@ -72,16 +72,16 @@ int main(int argc, char *argv[]){
     // generate AES key and IV
     generateAESKeyAndIV(key, iv);
 
-    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
-    // for(int i = 0; i < 32; i++){
-    //     printf("%02x", key[i]);
-    // }
-    // cout << endl;
-    // cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
-    // for(int i = 0; i < 16; i++){
-    //     printf("%02x", iv[i]);
-    // }
-    // cout << endl;
+    cout << "[\033[1;33mInfo\033[0m][\033[1mAES Key\033[0m] ";
+    for(int i = 0; i < 32; i++){
+        printf("%02x", key[i]);
+    }
+    cout << endl;
+    cout << "[\033[1;33mInfo\033[0m][\033[1mAES IV\033[0m] ";
+    for(int i = 0; i < 16; i++){
+        printf("%02x", iv[i]);
+    }
+    cout << endl;
 
     while(1){
         // accept the call

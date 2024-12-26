@@ -186,6 +186,13 @@ int main(int argc, char *argv[])
                     // check if the user is logined
                     cout << rcv_message << endl;
                     username = getNowUsername(client_fd, key, iv);
+
+                    // mkdir
+                    string dir = "./data/client/" + username;
+                    mkdir(dir.c_str(), 0777);
+                    mkdir((dir + "/file").c_str(), 0777);
+                    mkdir((dir + "/audio").c_str(), 0777);
+                    mkdir((dir + "/video").c_str(), 0777);
                 }
 
                 cout << endl;

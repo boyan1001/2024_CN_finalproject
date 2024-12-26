@@ -55,3 +55,5 @@ string UserLogout(User &login_user, int client_fd, unsigned char *key, unsigned 
 string getInfo(string rcv_message, User &login_user, unsigned char *key, unsigned char *iv);
 
 void chatting(string snd_message, int client_fd, User login_user, unsigned char *key, unsigned char *iv);
+
+void sendFile(int client_fd, int receiver_fd, int file_size, unsigned char *key, unsigned char *iv);

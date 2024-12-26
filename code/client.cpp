@@ -177,7 +177,6 @@ void chatting(int client_fd, string username, unsigned char *key, unsigned char 
 
     bytes_received = recv(client_fd, buffer, 4096, 0);
     rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
-    // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
     rcv_message = decrypt(rcv_message_cipher, key, iv);
 
     if (rcv_message.find("[\033[1;31mError\033[0m]") != string::npos)
@@ -197,7 +196,6 @@ void chatting(int client_fd, string username, unsigned char *key, unsigned char 
     memset(buffer, 0, sizeof(buffer));
     bytes_received = recv(client_fd, buffer, 4096, 0);
     rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
-    // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
     rcv_message = decrypt(rcv_message_cipher, key, iv);
 
     if (rcv_message.find("[Chatting][Start]") != string::npos)
@@ -260,6 +258,8 @@ void *chatingRcvThread(void *arg)
         // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
         rcv_message = decrypt(rcv_message_cipher, key, iv);
 
+        cout << "rcv_message: " << rcv_message << endl;
+
         if (rcv_message.find("[Chatting][Exit]") != string::npos)
         {
             printChatRoom(me);
@@ -272,7 +272,46 @@ void *chatingRcvThread(void *arg)
             *exitFlag = true;
             break;
         }
-        else
+        else if(rcv_message.find("[Chatting][File]") != string::npos){
+            cout << "rcv_message: " << rcv_message << endl;
+            string file_name;
+            string file_path;
+            string sender;
+            string receiver;
+            int file_size;
+            string content;
+            // [Chatting][File] sender:receiver:file_name:start
+            regex pattern(R"(\[Chatting\]\[File\]\s+(.+):(.+):(.+):(.+):(.+))");
+            smatch match;
+            if(regex_search(rcv_message, match, pattern)){
+                sender = match[1];
+                receiver = match[2];
+                file_name = match[3];
+                file_path = "./data/client/" + me + "/file/" + file_name;
+                file_size = stoi(match[4]);
+                content = match[5];
+            }else{
+                printError("Invalid file message");
+                continue;
+            }
+
+            // print message
+            printChatRoom(me);
+            cout << endl;
+            cout << "\033[1;33m" + target + "\033[0;33m is sendding a file to you, please don't send message or leave...\033[0m" << endl;
+        
+            // receive file
+            if(recvFile(client_fd, file_path, file_size, sender, receiver, key, iv)){
+                chatting_message.push("\033[1;36m" + sender + "\033[0;36m: send a file (\033[1;36m" + file_name + "\033[0;36m)\033[0m");
+            }else{
+                chatting_message.push("\033[1;31mError\033[0;31m: cannot receive a file (\033[1;31m" + file_name + "\033[0;31m)\033[0m");
+            }
+
+            printChatRoom(me);
+            cout << endl;
+            cout << "You: " << flush;
+        }
+        else if (rcv_message.find("[Chatting][Message]") != string::npos)
         {
             // [Chatting][Message] sender:receiver:message
             regex pattern(R"(\[Chatting\]\[Message\]\s+(.+):(.+):(.+))");
@@ -350,6 +389,31 @@ void chatRoom(int client_fd, string me, string target, unsigned char *key, unsig
         {
             continue;
         }
+        else if(snd_message.find("<file>") != string::npos){
+            // send file
+            regex pattern(R"(<file>\s+(.+))");
+            smatch match;
+            string file_path;
+            string file_name;
+            if(regex_search(snd_message, match, pattern)){
+                file_name = match[1];
+            }else{
+                printError("Invalid file path");
+                continue;
+            }
+            file_path = "./data/client/" + me + "/file/" + file_name;
+
+            printChatRoom(me);
+            cout << endl;
+            cout << "\033[1;33m"+ file_name + "\033[0;33m is sendding, please don't send message or leave...\033[0m" << endl;
+
+            if(sendFile(client_fd, file_path, me, target, key, iv)){
+                chatting_message.push("\033[1;36mYou\033[0;36m: send a file (\033[1;36m" + file_name + "\033[0;36m)\033[0m");
+            }else{
+                chatting_message.push("\033[1;31mError\033[0;31m: cannot send a file (\033[1;31m" + file_name + "\033[0;31m)\033[0m");
+            }
+
+        }
         else
         {
             // send message
@@ -403,4 +467,108 @@ bool isIP(string ip)
 {
     regex pattern(R"(\d+\.\d+\.\d+\.\d+)");
     return regex_match(ip, pattern);
+}
+
+bool sendFile(int client_fd, string file_path, string sender, string receiver, unsigned char *key, unsigned char *iv){
+    // send file
+    ifstream file(file_path, ios::binary);
+    if(!file){
+        printError("File not found");
+        return false;
+    }
+
+    // get file size
+    file.seekg(0, ios::end);
+    int file_size = file.tellg();
+    file.seekg(0, ios::beg);
+
+    // get file name
+    string file_name = file_path.substr(file_path.find_last_of("/") + 1);
+
+    // send file size
+    string header = "[Chatting][File] " + sender + ":" + receiver + ":" + file_name;
+    string snd_message = header + ":" + to_string(file_size) + ":start";
+    vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+    send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
+    // send file content
+    char buffer[4096];
+    while(file_size > 0){
+        // cout << "[File] file_size: " << file_size << endl;
+        file.read(buffer, 4096);
+        std::streamsize actual_read = file.gcount();
+        if(actual_read <= 0){
+            break;
+        }
+
+        vector<unsigned char> file_content(buffer, buffer + actual_read);
+        // cout << "[File] file_content size: " << file_content.size() << endl;
+        // cout << "[File] file_content: ";
+        for(int i = 0; i < file_content.size(); i++){
+            printf("%02x", file_content[i]);
+        }
+        cout << endl;
+        vector<unsigned char> file_content_cipher = encrypt_file(file_content, key, iv);
+        // cout << "[File] file_content_cipher size: " << file_content_cipher.size() << endl;
+        // cout << "[File] file_content_cipher: ";
+        for(int i = 0; i < file_content_cipher.size(); i++){
+            printf("%02x", file_content_cipher[i]);
+        }
+        cout << endl;
+        send(client_fd, file_content_cipher.data(), file_content_cipher.size(), 0);
+        file_size -= actual_read;
+    }
+
+    file.close();
+    return true;
+}
+
+bool recvFile(int client_fd, string file_path, int file_size, string sender, string receiver, unsigned char *key, unsigned char *iv) {
+    string original_file_name = filesystem::path(file_path).filename().string();
+    char buffer[4096];
+    vector<unsigned char> rcv_message_cipher;
+    vector<unsigned char> rcv_file_message;
+    string rcv_message;
+    int bytes_received;
+
+    // Ensure the directory exists
+    filesystem::path dir = filesystem::path(file_path).parent_path();
+    if (!filesystem::exists(dir)) {
+        filesystem::create_directories(dir);
+    }
+
+    // Handle file name conflicts
+    if (ifstream(file_path)) {
+        int copies = 1;
+        while (ifstream(file_path + "_" + to_string(copies))) {
+            copies++;
+        }
+        file_path = file_path + "_" + to_string(copies);
+    }
+
+    ofstream file(file_path, ios::binary);
+    if (!file.is_open()) {
+        printError("Failed to open file for writing");
+        return false;
+    }
+
+    while (file_size > 0) {
+        bytes_received = recv(client_fd, buffer, 4096, 0);
+        rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
+        rcv_file_message = decrypt_file(rcv_message_cipher, key, iv);
+
+        // cout << "[File] rcv_file_message size: " << rcv_file_message.size() << endl;
+        // cout << "[File] rcv_file_message: ";
+        for(int i = 0; i < rcv_file_message.size(); i++){
+            printf("%02x", rcv_file_message[i]);
+        }
+        cout << endl;
+
+        file.write(reinterpret_cast<const char*>(rcv_file_message.data()), rcv_file_message.size());
+        file_size -= rcv_file_message.size();
+        // cout << "[File] file_size: " << file_size << endl;
+    }
+
+    file.close();
+    return true;
 }
