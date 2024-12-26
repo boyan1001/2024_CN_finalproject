@@ -17,3 +17,5 @@ string clientMainMenu(string username, int mode);
 void statusMessage(string username);
 
 string chatMenu(string username);
+
+string outlineChatMenu(string username);

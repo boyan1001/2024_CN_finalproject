@@ -78,3 +78,15 @@ string chatMenu(string username){
     getline(cin, username);
     return username;
 }
+
+string outlineChatMenu(string username){
+    statusMessage(username);
+    cout << endl;
+    cout << "Do you want to wait for the user to be ready or leave?" << endl;
+    cout << "   1. Wait" << endl;
+    cout << "   2. Leave" << endl;
+    cout << ">>> Your choice: ";
+    string choice;
+    getline(cin, choice);
+    return choice;
+}

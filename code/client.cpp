@@ -209,10 +209,43 @@ void chatting(int client_fd, string username, unsigned char *key, unsigned char 
     else
     {
         cout << endl;
+
+        if(rcv_message.find("[Chatting][Busy]") != string::npos){
+            cout << "The user is busy now, please try again later." << endl;
+        }else{
+            cout << "The user is not ready now." << endl;
+        }
+
+        cout << ">>> Press ENTER to continue" << endl;
+        cin.get();
+
+        // waiting or leave
+        while(1){
+            system("clear");
+            title(1);
+            string choice = outlineChatMenu(username);
+            if(choice == "1"){
+                break;
+            }else if(choice == "2"){
+                return;
+            }else{
+                cout << endl;
+                printError("Invalid option, please choose again.");
+                cout << endl;
+                cout << ">>> Press ENTER to continue" << endl;
+                cin.get();
+            }
+        }
+
+        system("clear");
+        title(1);
+        statusMessage(username);
+        cout << endl;
         cout << "Waiting \033[1m" << target_username << "\033[0m to accept your invitation..." << endl;
 
         while (1)
         {
+            memset(buffer, 0, sizeof(buffer));
             int bytes_received = recv(client_fd, buffer, 4096, 0);
             rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
             // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
@@ -297,15 +330,21 @@ void *chatingRcvThread(void *arg)
             }
 
             // print message
-            printChatRoom(me);
-            cout << endl;
-            cout << "\033[1;33m" + target + "\033[0;33m is sendding a file to you, please don't send message or leave...\033[0m" << endl;
+            if(receiver != sender){
+                printChatRoom(me);
+                cout << endl;
+                cout << "\033[1;33m" + target + "\033[0;33m is sendding a file to you, please don't send message or leave...\033[0m" << endl;
+            }
         
             // receive file
             if(recvFile(client_fd, file_path, file_size, sender, receiver, key, iv)){
-                chatting_message.push("\033[1m" + sender + "\033[0m: send a file (\033[1;36m" + file_name + "\033[0m)");
+                if(receiver != sender){
+                    chatting_message.push("\033[1m" + sender + "\033[0m: send a file (\033[1;36m" + file_name + "\033[0m)");
+                }
             }else{
-                chatting_message.push("\033[1;31mError\033[0;31m: cannot receive a file (\033[1;31m" + file_name + "\033[0;31m)\033[0m");
+                if(receiver != sender){
+                    chatting_message.push("\033[1;31mError\033[0;31m: cannot receive a file (\033[1;31m" + file_name + "\033[0;31m)\033[0m");
+                }
             }
 
             printChatRoom(me);
@@ -422,6 +461,8 @@ void chatRoom(int client_fd, string me, string target, unsigned char *key, unsig
             snd_message = "[Chatting][Message] " + me + ":" + target + ":" + snd_message;
             snd_message_cipher = encrypt(snd_message, key, iv);
             send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
+            printChatRoom(me);
         }
     }
 

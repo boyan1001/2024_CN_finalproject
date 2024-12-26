@@ -3,6 +3,11 @@
 #include "src/crypt.hpp"
 #include "src/file.hpp"
 
+// gloable variables
+static unordered_map<string, int> name_to_fd;
+static unordered_set<string> waiting_for_chatting;
+static unordered_map<string, string> chatting_pair;
+
 // get ip addresses from external interface to the server
 string getIPAddress()
 {
@@ -57,7 +62,6 @@ void *handleClient(void *arg)
     // }
     // cout << endl;
 
-    
     // send to client AES key and IV
     send(client_fd, key, 32, 0);
     send(client_fd, iv, 16, 0);
@@ -383,6 +387,14 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
 
         if (waiting_for_chatting.find(accepter) != waiting_for_chatting.end())
         {
+            if (chatting_pair.find(inviter) != chatting_pair.end() || chatting_pair.find(accepter) != chatting_pair.end())
+            {
+                string snd_message = "[Chatting][Busy] " + inviter + ":" + accepter;
+                vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+                send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+                return;
+            }
+
             // send to accepter
             int accepter_fd = name_to_fd[accepter];
             string snd_message = "[Chatting][Start] " + accepter + ":" + inviter;
@@ -393,6 +405,10 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
             snd_message = "[Chatting][Start] " + inviter + ":" + accepter;
             snd_message_cipher = encrypt(snd_message, key, iv);
             send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
+            // add chatting pair
+            chatting_pair[inviter] = accepter;
+            chatting_pair[accepter] = inviter;
         }
         else
         {
@@ -416,20 +432,24 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
         }
         int target_fd = name_to_fd[target];
 
-        // request target to exit
+        // unset
         waiting_for_chatting.erase(target);
+        waiting_for_chatting.erase(me);
+        chatting_pair.erase(me);
+        chatting_pair.erase(target);
+
+        // request target to exit
         string snd_message = "[Chatting][Exit]";
 
         vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
         send(target_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
         // send back to me
-        waiting_for_chatting.erase(me);
         snd_message = "[Chatting][Exit]";
         snd_message_cipher = encrypt(snd_message, key, iv);
         send(client_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
     }
-    else if(rcv_message.find("[Chatting][File]") != string::npos)
+    else if (rcv_message.find("[Chatting][File]") != string::npos)
     {
         // data
         string sender;
@@ -441,21 +461,25 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
         // [Chatting][File] sender:receiver:file_name:file_size:content
         regex pattern(R"(\[Chatting\]\[File\]\s+(.+):(.+):(.+):(.+):(.+))");
         smatch match;
-        if(regex_search(rcv_message, match, pattern)){
+        if (regex_search(rcv_message, match, pattern))
+        {
             sender = match[1];
             receiver = match[2];
             file_name = match[3];
             file_size = stoi(match[4]);
             content = match[5];
-        }else{
+        }
+        else
+        {
             return;
         }
 
         // check sender
-        if(sender != login_user.username){
+        if (sender != login_user.username)
+        {
             return;
         }
-        
+
         // get receiver fd
         int receiver_fd = name_to_fd[receiver];
 
@@ -465,11 +489,12 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
         send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
         // file
-        if(content == "start"){
+        if (content == "start")
+        {
             handleFile(client_fd, receiver_fd, file_size, key, iv);
         }
         return;
-    }   
+    }
     else if (rcv_message.find("[Chatting][Message]") != string::npos)
     {
         // [Chatting][Message] sender:receiver:message
@@ -489,4 +514,3 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
     }
     return;
 }
-

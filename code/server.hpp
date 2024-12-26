@@ -32,10 +32,6 @@ struct ClientArgs{
     unsigned char aes_iv[16];
 };
 
-// gloable variables
-static unordered_map<string, int> name_to_fd;
-static unordered_set<string> waiting_for_chatting;
-
 // string getLocalAddress();
 
 string getIPAddress();
