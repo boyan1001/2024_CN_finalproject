@@ -524,7 +524,9 @@ bool sendFile(int client_fd, string file_path, string sender, string receiver, u
 }
 
 bool recvFile(int client_fd, string file_path, int file_size, string sender, string receiver, unsigned char *key, unsigned char *iv) {
-    string original_file_name = filesystem::path(file_path).filename().string();
+    string stem = filesystem::path(file_path).stem().string();
+    string parent_path = filesystem::path(file_path).parent_path().string();
+    string extension = filesystem::path(file_path).extension().string();
     char buffer[4096];
     vector<unsigned char> rcv_message_cipher;
     vector<unsigned char> rcv_file_message;
@@ -540,10 +542,10 @@ bool recvFile(int client_fd, string file_path, int file_size, string sender, str
     // Handle file name conflicts
     if (ifstream(file_path)) {
         int copies = 1;
-        while (ifstream(file_path + "_" + to_string(copies))) {
+        while (ifstream(parent_path + "/" + stem + " (" + to_string(copies) + ")" + extension)) {
             copies++;
         }
-        file_path = file_path + "_" + to_string(copies);
+        file_path = parent_path + "/" + stem + " (" + to_string(copies) + ")" + extension;
     }
 
     ofstream file(file_path, ios::binary);
