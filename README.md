@@ -14,16 +14,17 @@
 2024_CN_finalproject
 ├── /code/
 │  ├── /data/  
-│  │  ├── /client/
+│  │  ├── /client/       用戶資料存放區，用於檔案傳輸
 │  │  └── /server/
-│  │     ├── account.csv 儲存用戶資料
+│  │     └── account.csv server-side 儲存用戶資訊，用於登入檢查
 │  ├── /src/             其他主程式會用到的函式庫
 │  │  ├── UI.cpp         有關TUI設計的函式庫
-│  │  ├── UI.hpp
+│  │  ├── crypt.cpp      有關加密的函式庫  
+│  │  ├── file.cpp       有關檔案傳輸的函式庫  
 │  │  └── ...
-│  ├── client.cpp        client端的程式碼
+│  ├── client.cpp        client-side 程式碼
 │  ├── client.hpp
-│  ├── server.cpp        server端的程式碼
+│  ├── server.cpp        server-side 程式碼
 │  ├── server.hpp
 │  └── Makefile
 ├── .gitignore
@@ -85,11 +86,9 @@ sudo apt install openssl
 
 ### Client 端
 
-*(本程式目前僅支援 1 個 client 與 1 個 server 連接)*
-
 啟動 client 前，請先確認 server 在運作狀態中，之後再啟動 client
 
-啟動 client 後，會先與 server 連接成功後，才會進入主頁面。
+啟動 client 後，會先與 server 連接成功後，才會進入主頁面。  
 
 #### 註冊帳號  
 
@@ -97,21 +96,46 @@ sudo apt install openssl
 - 不可出現冒號 :   
 - 不可出現空格
   
-若出現不合法的帳戶名與密碼，將會出現錯誤訊息
+若出現不合法的帳戶名與密碼，將會出現錯誤訊息  
 
 #### 登入帳號  
 
 欲登入帳號，必須先確認該帳號已註冊，才可登入帳號  
 
 否則將跳出錯誤訊息要求重新輸入  
+  
+登入完成帳號之後，便會建立資料夾 `./code/data/client/[Your username]/`  
+
+若要傳輸檔案，可將檔案放入這個資料夾內  
 
 #### 登出帳號
 
 登入完成帳號後，可選擇是否要登出帳號  
 
-若不登出就退出 client 程式  
+#### 聊天模式  
 
-只要 server 仍在運作，重新開啟 client 端仍會在已登入狀態內  
+登入完成後，可依照主畫面提示進入聊天區  
+
+輸入你想聊天的對象，等待對方回應你的邀請  
+
+對方接受你的邀請並進入聊天室後，就可以開始聊天了  
+  
+##### 一般傳輸訊息
+直接在輸入區輸入想傳輸的訊息即可  
+
+##### 傳輸檔案  
+請先把檔案放到 `./code/data/client/[Your username]/` 中  
+
+然後輸入 `<file> [Your filename]`  
+
+按下 Enter 後，等待片刻對方就會在對方的 `./code/data/client/[Receiver's username]/` 中收到檔案  
+
+##### 離開聊天室 
+於輸入區輸入 `<exit>` 即可離開  
+
+輸入完成後，對方聊天室也會顯示你已離開　　
+
+對方也會同時退出　　
 
 ## 🪪 Lisence  
 [MIT](LICENSE) © Hank Chen  
