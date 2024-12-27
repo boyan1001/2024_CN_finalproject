@@ -57,8 +57,10 @@ g++ --version
 sudo apt install g++
 ```
 ### 函式庫  
-請先透過下方指令下載 **OpenSSL** 函式庫：  
+請先透過下方指令下載 **OpenSSL** 與 **SDL2** 函式庫：  
 ```sh
+sudo apt-get update
+sudo apt-get install libsdl2-dev
 sudo apt install openssl
 ```
   
