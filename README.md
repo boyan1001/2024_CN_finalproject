@@ -22,10 +22,12 @@
 │  │  ├── crypt.cpp      有關加密的函式庫  
 │  │  ├── file.cpp       有關檔案傳輸的函式庫  
 │  │  └── audio.cpp      有關 audio streaming 的函式庫  
-│  ├── client.cpp        client-side 程式碼
+│  ├── client.cpp        client-side 的主要函式庫
 │  ├── client.hpp
-│  ├── server.cpp        server-side 程式碼
+│  ├── clientmain.cpp    client-side 的主程式
+│  ├── server.cpp        server-side 的主要函式庫
 │  ├── server.hpp
+│  ├── servermain.cpp    server-side 的主程式  
 │  └── Makefile
 ├── .gitignore
 ├── LICENSE
