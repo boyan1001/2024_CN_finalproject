@@ -19,7 +19,7 @@ int main(){
     }
     else
     {
-        cerr << "Encryption/Decryption failed. Result: " << decrypted << endl;
+        cerr << "Encryption/Decryptiocccn failed. Result: " << decrypted << endl;
     }
     return 0;
 }

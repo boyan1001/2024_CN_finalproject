@@ -39,6 +39,10 @@ logs/
 
 # test
 test*.cpp
+test.cpp
 
 # client_data
 code/data/client/*
+
+# test
+Makefile
