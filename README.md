@@ -21,7 +21,7 @@
 │  │  ├── UI.cpp         有關TUI設計的函式庫
 │  │  ├── crypt.cpp      有關加密的函式庫  
 │  │  ├── file.cpp       有關檔案傳輸的函式庫  
-│  │  └── ...
+│  │  └── audio.cpp      有關 audio streaming 的函式庫  
 │  ├── client.cpp        client-side 程式碼
 │  ├── client.hpp
 │  ├── server.cpp        server-side 程式碼
@@ -120,17 +120,24 @@ sudo apt install openssl
 
 對方接受你的邀請並進入聊天室後，就可以開始聊天了  
   
-##### 一般傳輸訊息
+#### 一般傳輸訊息
 直接在輸入區輸入想傳輸的訊息即可  
 
-##### 傳輸檔案  
+#### 傳輸檔案  
 請先把檔案放到 `./code/data/client/[Your username]/` 中  
 
 然後輸入 `<file> [Your filename]`  
 
 按下 Enter 後，等待片刻對方就會在對方的 `./code/data/client/[Receiver's username]/` 中收到檔案  
 
-##### 離開聊天室 
+#### Audio streaming  
+請在輸入區輸入 `<audio streaming>` 即可與對方開始 audio streaming  
+
+想結束請依照提示按下 Enter 就可終止 audio streaming  
+
+**只有發送方可以終止 audio streaming**  
+
+#### 離開聊天室 
 於輸入區輸入 `<exit>` 即可離開  
 
 輸入完成後，對方聊天室也會顯示你已離開　　
