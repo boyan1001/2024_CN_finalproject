@@ -13,7 +13,6 @@
 #include <openssl/core_names.h>
 #include <openssl/core.h>
 
-
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
@@ -34,4 +33,4 @@ string decrypt(const vector<unsigned char> &origin_cipher_text, const unsigned c
 
 vector<unsigned char> decrypt_file(const vector<unsigned char> &origin_cipher_text, const unsigned char *key, const unsigned char *iv);
 
-string base64_encode(const unsigned char* input, int length);
+string base64_encode(const unsigned char *input, int length);

@@ -2,10 +2,12 @@
 #include "crypt.hpp"
 #include "UI.hpp"
 
-bool sendFile(int client_fd, string file_path, string sender, string receiver, unsigned char *key, unsigned char *iv){
+bool sendFile(int client_fd, string file_path, string sender, string receiver, unsigned char *key, unsigned char *iv)
+{
     // send file
     ifstream file(file_path, ios::binary);
-    if(!file){
+    if (!file)
+    {
         printError("File not found");
         return false;
     }
@@ -26,11 +28,13 @@ bool sendFile(int client_fd, string file_path, string sender, string receiver, u
 
     // send file content
     char buffer[65536];
-    while(file_size > 0){
+    while (file_size > 0)
+    {
         // cout << "[File] file_size: " << file_size << endl;
         file.read(buffer, 4096);
         std::streamsize actual_read = file.gcount();
-        if(actual_read <= 0){
+        if (actual_read <= 0)
+        {
             break;
         }
 
@@ -51,12 +55,14 @@ bool sendFile(int client_fd, string file_path, string sender, string receiver, u
 
         int cipher_size = file_content_cipher.size();
 
-        if (!sendAll(client_fd, reinterpret_cast<unsigned char*>(&cipher_size), sizeof(cipher_size))) {
+        if (!sendAll(client_fd, reinterpret_cast<unsigned char *>(&cipher_size), sizeof(cipher_size)))
+        {
             file.close();
             return false;
         }
 
-        if (!sendAll(client_fd, file_content_cipher.data(), file_content_cipher.size())) {
+        if (!sendAll(client_fd, file_content_cipher.data(), file_content_cipher.size()))
+        {
             file.close();
             return false;
         }
@@ -67,7 +73,8 @@ bool sendFile(int client_fd, string file_path, string sender, string receiver, u
     return true;
 }
 
-bool recvFile(int client_fd, string file_path, int file_size, string sender, string receiver, unsigned char *key, unsigned char *iv) {
+bool recvFile(int client_fd, string file_path, int file_size, string sender, string receiver, unsigned char *key, unsigned char *iv)
+{
     string stem = filesystem::path(file_path).stem().string();
     string parent_path = filesystem::path(file_path).parent_path().string();
     string extension = filesystem::path(file_path).extension().string();
@@ -79,34 +86,41 @@ bool recvFile(int client_fd, string file_path, int file_size, string sender, str
 
     // Ensure the directory exists
     filesystem::path dir = filesystem::path(file_path).parent_path();
-    if (!filesystem::exists(dir)) {
+    if (!filesystem::exists(dir))
+    {
         filesystem::create_directories(dir);
     }
 
     // Handle file name conflicts
-    if(filesystem::exists(file_path)){
+    if (filesystem::exists(file_path))
+    {
         int i = 1;
-        while(filesystem::exists(parent_path + "/" + stem + "(" + to_string(i) + ")" + extension)){
+        while (filesystem::exists(parent_path + "/" + stem + "(" + to_string(i) + ")" + extension))
+        {
             i++;
         }
         file_path = parent_path + "/" + stem + "(" + to_string(i) + ")" + extension;
     }
 
     ofstream file(file_path, ios::binary);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         printError("Failed to open file for writing");
         return false;
     }
 
-    while (file_size > 0) {
+    while (file_size > 0)
+    {
         int cipher_size;
-        if (!recvAll(client_fd, reinterpret_cast<unsigned char*>(&cipher_size), sizeof(cipher_size))) {
+        if (!recvAll(client_fd, reinterpret_cast<unsigned char *>(&cipher_size), sizeof(cipher_size)))
+        {
             file.close();
             return false;
         }
 
         rcv_message_cipher = vector<unsigned char>(cipher_size);
-        if (!recvAll(client_fd, rcv_message_cipher.data(), cipher_size)) {
+        if (!recvAll(client_fd, rcv_message_cipher.data(), cipher_size))
+        {
             file.close();
             return false;
         }
@@ -119,12 +133,13 @@ bool recvFile(int client_fd, string file_path, int file_size, string sender, str
         // }
         // cout << endl;
 
-        if (rcv_file_message.empty()) {
+        if (rcv_file_message.empty())
+        {
             file.close();
             return false;
         }
 
-        file.write(reinterpret_cast<char*>(rcv_file_message.data()), rcv_file_message.size());
+        file.write(reinterpret_cast<char *>(rcv_file_message.data()), rcv_file_message.size());
         file_size -= rcv_file_message.size();
     }
 
@@ -132,7 +147,8 @@ bool recvFile(int client_fd, string file_path, int file_size, string sender, str
     return true;
 }
 
-void handleFile(int client_fd, int receiver_fd, int file_size, unsigned char *key, unsigned char *iv){
+void handleFile(int client_fd, int receiver_fd, int file_size, unsigned char *key, unsigned char *iv)
+{
     char buffer[65536];
     int bytes_received;
     string rcv_message;
@@ -141,16 +157,19 @@ void handleFile(int client_fd, int receiver_fd, int file_size, unsigned char *ke
     vector<unsigned char> snd_message_cipher;
 
     // receive file content
-    while(file_size > 0){
+    while (file_size > 0)
+    {
         memset(buffer, 0, sizeof(buffer));
-        
+
         int cipher_size;
-        if (!recvAll(client_fd, reinterpret_cast<unsigned char*>(&cipher_size), sizeof(cipher_size))) {
+        if (!recvAll(client_fd, reinterpret_cast<unsigned char *>(&cipher_size), sizeof(cipher_size)))
+        {
             return;
         }
 
         rcv_message_cipher = vector<unsigned char>(cipher_size);
-        if (!recvAll(client_fd, rcv_message_cipher.data(), cipher_size)) {
+        if (!recvAll(client_fd, rcv_message_cipher.data(), cipher_size))
+        {
             return;
         }
 
@@ -162,15 +181,18 @@ void handleFile(int client_fd, int receiver_fd, int file_size, unsigned char *ke
         // }
         // cout << endl;
 
-        if (rcv_file_message.empty()) {
+        if (rcv_file_message.empty())
+        {
             return;
         }
 
-        if (!sendAll(receiver_fd, reinterpret_cast<unsigned char*>(&cipher_size), sizeof(cipher_size))) {
+        if (!sendAll(receiver_fd, reinterpret_cast<unsigned char *>(&cipher_size), sizeof(cipher_size)))
+        {
             return;
         }
 
-        if (!sendAll(receiver_fd, rcv_message_cipher.data(), cipher_size)) {
+        if (!sendAll(receiver_fd, rcv_message_cipher.data(), cipher_size))
+        {
             return;
         }
 
@@ -179,11 +201,14 @@ void handleFile(int client_fd, int receiver_fd, int file_size, unsigned char *ke
     return;
 }
 
-bool sendAll(int client_fd, const unsigned char *data, size_t size) {
+bool sendAll(int client_fd, const unsigned char *data, size_t size)
+{
     size_t total_sent = 0;
-    while (total_sent < size) {
+    while (total_sent < size)
+    {
         ssize_t sent_bytes = send(client_fd, data + total_sent, size - total_sent, 0);
-        if (sent_bytes < 0) {
+        if (sent_bytes < 0)
+        {
             printError("sendAll failed");
             return false;
         }
@@ -192,11 +217,14 @@ bool sendAll(int client_fd, const unsigned char *data, size_t size) {
     return true;
 }
 
-bool recvAll(int client_fd, unsigned char *data, size_t size) {
+bool recvAll(int client_fd, unsigned char *data, size_t size)
+{
     size_t total_received = 0;
-    while (total_received < size) {
+    while (total_received < size)
+    {
         ssize_t recv_bytes = recv(client_fd, data + total_received, size - total_received, 0);
-        if (recv_bytes <= 0) {
+        if (recv_bytes <= 0)
+        {
             printError("recvAll failed");
             return false;
         }

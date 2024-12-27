@@ -17,23 +17,24 @@
 #include <regex>
 #include <queue>
 
-
 #pragma once
 
 using namespace std;
 
-typedef struct{
+typedef struct
+{
     string username;
     string password;
-}User;
+} User;
 
-struct ChattingArgs{
+struct ChattingArgs
+{
     string me;
     string target;
     int client_fd;
     unsigned char aes_key[32];
     unsigned char aes_iv[16];
-    bool* exitFlag; // if the chatting is over
+    bool *exitFlag; // if the chatting is over
 };
 
 string userRegistration(string username);
@@ -48,7 +49,7 @@ void returnMessage();
 
 void chatting(int client_fd, string username, unsigned char *key, unsigned char *iv);
 
-void* chatingRcvThread(void* arg);
+void *chatingRcvThread(void *arg);
 
 void chatRoom(int client_fd, string me, string target, unsigned char *key, unsigned char *iv);
 

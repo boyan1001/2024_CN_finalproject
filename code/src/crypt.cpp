@@ -213,7 +213,7 @@ vector<unsigned char> decrypt_file(const vector<unsigned char> &origin_cipher_te
 
     int len = static_cast<int>(origin_cipher_text.size());
     int block_size = EVP_CIPHER_block_size(EVP_aes_256_cbc());
-    int max_len = len + block_size;  // 預留可能的 Padding 空間
+    int max_len = len + block_size; // 預留可能的 Padding 空間
 
     vector<unsigned char> plain_text(max_len, 0);
     int update_len = 0, final_len = 0;

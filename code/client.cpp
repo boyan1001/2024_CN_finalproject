@@ -211,9 +211,12 @@ void chatting(int client_fd, string username, unsigned char *key, unsigned char 
     {
         cout << endl;
 
-        if(rcv_message.find("[Chatting][Busy]") != string::npos){
+        if (rcv_message.find("[Chatting][Busy]") != string::npos)
+        {
             cout << "The user is busy now, please try again later." << endl;
-        }else{
+        }
+        else
+        {
             cout << "The user is not ready now." << endl;
         }
 
@@ -221,15 +224,21 @@ void chatting(int client_fd, string username, unsigned char *key, unsigned char 
         cin.get();
 
         // waiting or leave
-        while(1){
+        while (1)
+        {
             system("clear");
             title(1);
             string choice = outlineChatMenu(username);
-            if(choice == "1"){
+            if (choice == "1")
+            {
                 break;
-            }else if(choice == "2"){
+            }
+            else if (choice == "2")
+            {
                 return;
-            }else{
+            }
+            else
+            {
                 cout << endl;
                 printError("Invalid option, please choose again.");
                 cout << endl;
@@ -282,7 +291,6 @@ void *chatingRcvThread(void *arg)
     string rcv_message;
     vector<unsigned char> rcv_message_cipher;
     char buffer[4096];
-    
 
     while (1)
     {
@@ -307,7 +315,8 @@ void *chatingRcvThread(void *arg)
             *exitFlag = true;
             break;
         }
-        else if(rcv_message.find("[Chatting][File]") != string::npos){
+        else if (rcv_message.find("[Chatting][File]") != string::npos)
+        {
             cout << "rcv_message: " << rcv_message << endl;
             string file_name;
             string file_path;
@@ -318,32 +327,41 @@ void *chatingRcvThread(void *arg)
             // [Chatting][File] sender:receiver:file_name:start
             regex pattern(R"(\[Chatting\]\[File\]\s+(.+):(.+):(.+):(.+):(.+))");
             smatch match;
-            if(regex_search(rcv_message, match, pattern)){
+            if (regex_search(rcv_message, match, pattern))
+            {
                 sender = match[1];
                 receiver = match[2];
                 file_name = match[3];
                 file_path = "./data/client/" + me + "/" + file_name;
                 file_size = stoi(match[4]);
                 content = match[5];
-            }else{
+            }
+            else
+            {
                 printError("Invalid file message");
                 continue;
             }
 
             // print message
-            if(receiver != sender){
+            if (receiver != sender)
+            {
                 printChatRoom(me, chatting_message);
                 cout << endl;
                 cout << "\033[1;33m" + target + "\033[0;33m is sendding a file to you, please don't send message or leave...\033[0m" << endl;
             }
-        
+
             // receive file
-            if(recvFile(client_fd, file_path, file_size, sender, receiver, key, iv)){
-                if(receiver != sender){
+            if (recvFile(client_fd, file_path, file_size, sender, receiver, key, iv))
+            {
+                if (receiver != sender)
+                {
                     chatting_message.push("\033[1m" + sender + "\033[0m: send a file (\033[1;36m" + file_name + "\033[0m)");
                 }
-            }else{
-                if(receiver != sender){
+            }
+            else
+            {
+                if (receiver != sender)
+                {
                     chatting_message.push("\033[1;31mError\033[0;31m: cannot receive a file (\033[1;31m" + file_name + "\033[0;31m)\033[0m");
                 }
             }
@@ -368,43 +386,53 @@ void *chatingRcvThread(void *arg)
                 cout << endl;
                 cout << "You: " << flush;
             }
-        }else if(rcv_message.find("[Chatting][Audio]") != string::npos){
+        }
+        else if (rcv_message.find("[Chatting][Audio]") != string::npos)
+        {
             cout << "rcv_message: " << rcv_message << endl;
             string sender;
             string receiver;
             // [Chatting][Audio] sender:receiver
             regex pattern(R"(\[Chatting\]\[Audio\]\s+(.+):(.+))");
             smatch match;
-            if(regex_search(rcv_message, match, pattern)){
+            if (regex_search(rcv_message, match, pattern))
+            {
                 sender = match[1];
                 receiver = match[2];
-            }else{
+            }
+            else
+            {
                 printError("Invalid audio message");
                 continue;
             }
 
             // print message
-            if(receiver != sender){
+            if (receiver != sender)
+            {
                 printChatRoom(me, chatting_message);
                 cout << endl;
                 cout << "\033[1;33m" + target + "\033[0;33m is sendding an audio file to you, please don't send message or leave...\033[0m" << endl;
             }
 
             // receive audio
-            if(receiver != sender){
+            if (receiver != sender)
+            {
                 chatting_message.push("\033[1m" + sender + "\033[0m: begin audio streaming");
             }
 
             printChatRoom(me, chatting_message);
             cout << endl;
 
-            if(!receiverAudio(client_fd, sender, chatting_message)){
-                if(receiver != sender){
+            if (!receiverAudio(client_fd, sender, chatting_message))
+            {
+                if (receiver != sender)
+                {
                     chatting_message.push("\033[1;31mError\033[0;31m: cannot receive an audio file\033[0m");
                 }
             }
 
-            if(receiver != sender){
+            if (receiver != sender)
+            {
                 chatting_message.push("\033[1m" + sender + "\033[0m: end audio streaming");
             }
 
@@ -473,9 +501,11 @@ void chatRoom(int client_fd, string me, string target, unsigned char *key, unsig
         {
             continue;
         }
-        else if(snd_message.find("<file>") != string::npos){
+        else if (snd_message.find("<file>") != string::npos)
+        {
             // checking
-            if(me == target){
+            if (me == target)
+            {
                 cout << "\033[1;33mYou cannot send file to yourself\033[0m" << endl;
                 cout << endl;
                 cout << ">>> Press ENTER to continue" << endl;
@@ -487,9 +517,12 @@ void chatRoom(int client_fd, string me, string target, unsigned char *key, unsig
             smatch match;
             string file_path;
             string file_name;
-            if(regex_search(snd_message, match, pattern)){
+            if (regex_search(snd_message, match, pattern))
+            {
                 file_name = match[1];
-            }else{
+            }
+            else
+            {
                 printError("Invalid file path");
                 continue;
             }
@@ -497,19 +530,22 @@ void chatRoom(int client_fd, string me, string target, unsigned char *key, unsig
 
             printChatRoom(me, chatting_message);
             cout << endl;
-            cout << "\033[1;33m"+ file_name + "\033[0;33m is sendding, please don't send message or leave...\033[0m" << endl;
+            cout << "\033[1;33m" + file_name + "\033[0;33m is sendding, please don't send message or leave...\033[0m" << endl;
 
-            if(sendFile(client_fd, file_path, me, target, key, iv)){
+            if (sendFile(client_fd, file_path, me, target, key, iv))
+            {
                 chatting_message.push("\033[1;36mYou\033[0;36m: send a file (\033[1;36m" + file_name + "\033[0;36m)\033[0m");
-            }else{
+            }
+            else
+            {
                 chatting_message.push("\033[1;31mError\033[0;31m: cannot send a file (\033[1;31m" + file_name + "\033[0;31m)\033[0m");
             }
-
         }
-        else if(snd_message.find("<audio streaming>") != string::npos)
+        else if (snd_message.find("<audio streaming>") != string::npos)
         {
             // checking
-            if(me == target){
+            if (me == target)
+            {
                 cout << "\033[1;33mYou cannot send audio streaming to yourself\033[0m" << endl;
                 cout << endl;
                 cout << ">>> Press ENTER to continue" << endl;
@@ -525,9 +561,12 @@ void chatRoom(int client_fd, string me, string target, unsigned char *key, unsig
             printChatRoom(me, chatting_message);
             cout << endl;
 
-            if(senderAudio(client_fd, target)){
+            if (senderAudio(client_fd, target))
+            {
                 chatting_message.push("\033[1;36mYou\033[0;36m: launch audio streaming\033[0m");
-            }else{
+            }
+            else
+            {
                 chatting_message.push("\033[1;31mError\033[0;31m: cannot launch audio streaming\033[0m");
             }
 

@@ -29,11 +29,11 @@
 
 using namespace std;
 
-void audioPlaybackCallback(void* userdata, Uint8* stream, int len);
+void audioPlaybackCallback(void *userdata, Uint8 *stream, int len);
 
-void audioCaptureCallback(void* userdata, Uint8* stream, int len);
+void audioCaptureCallback(void *userdata, Uint8 *stream, int len);
 
-void* audioRecvThread(void* arg);
+void *audioRecvThread(void *arg);
 
 bool receiverAudio(int sender_fd, string sender, queue<string> &chatting_message);
 

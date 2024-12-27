@@ -512,17 +512,22 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
             vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
             send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
         }
-    }else if(rcv_message.find("[Chatting][Audio]") != string::npos){
+    }
+    else if (rcv_message.find("[Chatting][Audio]") != string::npos)
+    {
         // [Chatting][Audio] sender:receiver
         regex pattern(R"(\[Chatting\]\[Audio\]\s+(.+):(.+))");
         smatch match;
         string sender;
         string receiver;
 
-        if(regex_search(rcv_message, match, pattern)){
+        if (regex_search(rcv_message, match, pattern))
+        {
             sender = match[1];
             receiver = match[2];
-        }else{
+        }
+        else
+        {
             return;
         }
 
@@ -535,9 +540,12 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
         send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
 
         // transfer audio streaming
-        if(handleAudio(client_fd, receiver_fd)){
-            cout << "[\033[1mServer\033[0m] Audio streaming end" << endl; 
-        }else{
+        if (handleAudio(client_fd, receiver_fd))
+        {
+            cout << "[\033[1mServer\033[0m] Audio streaming end" << endl;
+        }
+        else
+        {
             cout << "[\033[1;31mError\033[0m] Audio streaming failed" << endl;
         }
     }

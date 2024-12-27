@@ -21,12 +21,14 @@
 
 using namespace std;
 
-typedef struct{
+typedef struct
+{
     string username;
     string password;
-}User;
+} User;
 
-struct ClientArgs{
+struct ClientArgs
+{
     int client_fd;
     unsigned char aes_key[32];
     unsigned char aes_iv[16];
@@ -40,7 +42,7 @@ string getIPAddress();
 
 // int acceptClient(int server_fd, struct sockaddr_in accept_address, socklen_t accept_addressSize);
 
-void *handleClient(void* arg);
+void *handleClient(void *arg);
 
 string userRegistration(string username, unsigned char *key, unsigned char *iv);
 

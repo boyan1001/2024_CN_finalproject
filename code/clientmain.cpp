@@ -7,7 +7,7 @@ static unsigned char iv[16] = {0};
 
 int main(int argc, char *argv[])
 {
-    
+
     // argument
     if (argc != 3)
     {
@@ -16,9 +16,12 @@ int main(int argc, char *argv[])
     }
 
     string server_ip;
-    if(isIP(argv[1])){
+    if (isIP(argv[1]))
+    {
         server_ip = argv[1];
-    }else{
+    }
+    else
+    {
         server_ip = getIPfromDomain(argv[1]);
     }
     int server_port = atoi(argv[2]);
@@ -80,7 +83,6 @@ int main(int argc, char *argv[])
     }
     // receive data from the server
     string username = getNowUsername(client_fd, key, iv);
-    
 
     while (1)
     {
@@ -176,7 +178,7 @@ int main(int argc, char *argv[])
                 rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
                 // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
                 rcv_message = decrypt(rcv_message_cipher, key, iv);
-                
+
                 if (rcv_message.find("[\033[1;31mError\033[0m]") != string::npos)
                 {
                     cout << rcv_message << endl;
@@ -233,7 +235,7 @@ int main(int argc, char *argv[])
             cout << ">>> Press ENTER to continue" << endl;
             cin.get();
         }
-        else if(choice == "3" && !username.empty())
+        else if (choice == "3" && !username.empty())
         {
             chatting(client_fd, username, key, iv);
             continue;
