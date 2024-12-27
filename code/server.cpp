@@ -2,6 +2,7 @@
 #include "src/UI.hpp"
 #include "src/crypt.hpp"
 #include "src/file.hpp"
+#include "src/audio.hpp"
 
 // gloable variables
 static unordered_map<string, int> name_to_fd;
@@ -510,6 +511,34 @@ void chatting(string rcv_message, int client_fd, User login_user, unsigned char 
             string snd_message = rcv_message;
             vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
             send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+        }
+    }else if(rcv_message.find("[Chatting][Audio]") != string::npos){
+        // [Chatting][Audio] sender:receiver
+        regex pattern(R"(\[Chatting\]\[Audio\]\s+(.+):(.+))");
+        smatch match;
+        string sender;
+        string receiver;
+
+        if(regex_search(rcv_message, match, pattern)){
+            sender = match[1];
+            receiver = match[2];
+        }else{
+            return;
+        }
+
+        int receiver_fd = name_to_fd[receiver];
+        string snd_message = rcv_message;
+        vector<unsigned char> snd_message_cipher = encrypt(snd_message, key, iv);
+
+        cout << "[\033[1mServer\033[0m] Audio streaming start" << endl;
+
+        send(receiver_fd, snd_message_cipher.data(), snd_message_cipher.size(), 0);
+
+        // transfer audio streaming
+        if(handleAudio(client_fd, receiver_fd)){
+            cout << "[\033[1mServer\033[0m] Audio streaming end" << endl; 
+        }else{
+            cout << "[\033[1;31mError\033[0m] Audio streaming failed" << endl;
         }
     }
     return;

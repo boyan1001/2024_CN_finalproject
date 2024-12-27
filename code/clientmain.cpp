@@ -7,7 +7,7 @@ static unsigned char iv[16] = {0};
 
 int main(int argc, char *argv[])
 {
-
+    
     // argument
     if (argc != 3)
     {
@@ -190,9 +190,6 @@ int main(int argc, char *argv[])
                     // mkdir
                     string dir = "./data/client/" + username;
                     mkdir(dir.c_str(), 0777);
-                    mkdir((dir + "/file").c_str(), 0777);
-                    mkdir((dir + "/audio").c_str(), 0777);
-                    mkdir((dir + "/video").c_str(), 0777);
                 }
 
                 cout << endl;
@@ -220,7 +217,6 @@ int main(int argc, char *argv[])
             // receive from server
             ssize_t bytes_received = recv(client_fd, buffer, 4096, 0);
             rcv_message_cipher = vector<unsigned char>(buffer, buffer + bytes_received);
-            // rcv_message_cipher = rcv_message_cipher.substr(0, rcv_message_cipher.find('\0')); // remove useless characters
             rcv_message = decrypt(rcv_message_cipher, key, iv);
 
             if (bytes_received < 0)

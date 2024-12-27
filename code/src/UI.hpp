@@ -1,4 +1,8 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <cstdlib>
+
+#include <string>
+#include <queue>
 
 #pragma once
 
@@ -19,3 +23,9 @@ void statusMessage(string username);
 string chatMenu(string username);
 
 string outlineChatMenu(string username);
+
+void resizeQueue(queue<string> &chatting_message);
+
+void printMessage(queue<string> &chatting_message);
+
+void printChatRoom(string username, queue<string> &chatting_message);

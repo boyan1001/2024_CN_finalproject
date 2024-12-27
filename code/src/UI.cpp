@@ -90,3 +90,33 @@ string outlineChatMenu(string username){
     getline(cin, choice);
     return choice;
 }
+
+void resizeQueue(queue<string> &chatting_message){
+    while(chatting_message.size() > 40){
+        chatting_message.pop();
+    }
+    return;
+}
+
+void printMessage(queue<string> &chatting_message)
+{
+    queue temp = chatting_message;
+    while (!temp.empty())
+    {
+        cout << temp.front() << endl;
+        temp.pop();
+    }
+    return;
+}
+
+void printChatRoom(string username, queue<string> &chatting_message)
+{
+    system("clear");
+    title(1);
+    statusMessage(username);
+    cout << endl;
+
+    resizeQueue(chatting_message);
+    printMessage(chatting_message);
+    return;
+}

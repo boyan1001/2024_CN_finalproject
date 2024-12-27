@@ -6,6 +6,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cmath>
+#include <unistd.h>
+
+#include <fstream>
+#include <filesystem>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
