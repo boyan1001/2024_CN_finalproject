@@ -32,5 +32,3 @@ vector<unsigned char> encrypt_file(const vector<unsigned char> &plain_text, cons
 string decrypt(const vector<unsigned char> &origin_cipher_text, const unsigned char *key, const unsigned char *iv);
 
 vector<unsigned char> decrypt_file(const vector<unsigned char> &origin_cipher_text, const unsigned char *key, const unsigned char *iv);
-
-string base64_encode(const unsigned char *input, int length);

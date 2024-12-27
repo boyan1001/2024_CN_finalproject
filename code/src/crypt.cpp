@@ -133,9 +133,7 @@ vector<unsigned char> encrypt_file(const vector<unsigned char> &plain_text, cons
  */
 string decrypt(const vector<unsigned char> &origin_cipher_text, const unsigned char *key, const unsigned char *iv)
 {
-    // cout << "Original Cipher Length: " << origin_cipher_text.size() << endl;
 
-    // 確保密文長度是 16 的倍數
     if (origin_cipher_text.size() % 16 != 0)
     {
         cerr << "Cipher length is not a multiple of block size, decryption aborted." << endl;
@@ -181,8 +179,6 @@ string decrypt(const vector<unsigned char> &origin_cipher_text, const unsigned c
 
     plain_text.resize(update_len + final_len);
 
-    // cout << "Decrypted: " << plain_text.data() << endl;
-    // cout << "Decrypted size: " << plain_text.size() << endl;
     return string(plain_text.begin(), plain_text.end());
 }
 
@@ -244,22 +240,4 @@ vector<unsigned char> decrypt_file(const vector<unsigned char> &origin_cipher_te
 
     // 傳回解密後的二進位資料
     return plain_text;
-}
-
-string base64_encode(const unsigned char *input, int length)
-{
-    BIO *b64 = BIO_new(BIO_f_base64());
-    BIO *bio = BIO_new(BIO_s_mem());
-    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-    BIO_push(b64, bio);
-
-    BIO_write(b64, input, length);
-    BIO_flush(b64);
-
-    BUF_MEM *buffer_ptr;
-    BIO_get_mem_ptr(b64, &buffer_ptr);
-    string encoded(buffer_ptr->data, buffer_ptr->length);
-
-    BIO_free_all(b64);
-    return encoded;
 }
