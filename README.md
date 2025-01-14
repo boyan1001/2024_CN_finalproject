@@ -3,6 +3,7 @@
 ![license](https://img.shields.io/github/license/boyan1001/2024_CN_finalproject?style=for-the-badge)
 ![Last Commit](https://img.shields.io/github/last-commit/boyan1001/2024_CN_finalproject?style=for-the-badge)
 ![Pull Requests](https://img.shields.io/github/issues-pr/boyan1001/2024_CN_finalproject?style=for-the-badge)
+![C++](https://img.shields.io/badge/C++-00599C.svg?logo=c%2B%2B&logoColor=white&style=for-the-badge)
 
 這是我在**計算機網路**課程的期末專題  
 
