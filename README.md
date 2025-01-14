@@ -1,4 +1,8 @@
 # 2024 Computer Network Final Project  
+![contributor](https://img.shields.io/github/contributors/boyan1001/2024_CN_finalproject?style=for-the-badge)
+![license](https://img.shields.io/github/license/boyan1001/2024_CN_finalproject?style=for-the-badge)
+![Last Commit](https://img.shields.io/github/last-commit/boyan1001/2024_CN_finalproject?style=for-the-badge)
+![Pull Requests](https://img.shields.io/github/issues-pr/boyan1001/2024_CN_finalproject?style=for-the-badge)
 
 這是我在**計算機網路**課程的期末專題  
 
