@@ -433,5 +433,11 @@ void generateAESKeyAndIV(unsigned char *key, unsigned char *iv)
 
 對方也會同時退出　　
 
+## 🛠️ 貢獻者須知  
+
+貢獻者需知可參考 [CONTRIBUTING.md](CONTRIBUTING.md) 與 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) 檔案～  
+  
+有任何想法，歡迎在 [Issues](https://github.com/boyan1001/2024_CN_finalproject/issues) 提出。  
+
 ## 🪪 Lisence  
 [MIT](LICENSE) © Hank Chen  
