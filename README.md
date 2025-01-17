@@ -1,4 +1,4 @@
-# 2024 Computer Network Final Project  
+# Real-Time Chatroom
 ![contributor](https://img.shields.io/github/contributors/boyan1001/2024_CN_finalproject?style=for-the-badge)
 ![license](https://img.shields.io/github/license/boyan1001/2024_CN_finalproject?style=for-the-badge)
 ![Last Commit](https://img.shields.io/github/last-commit/boyan1001/2024_CN_finalproject?style=for-the-badge)
