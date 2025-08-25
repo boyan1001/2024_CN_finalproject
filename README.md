@@ -410,13 +410,13 @@ The process is as follows:
 🔗 Flowchart:
 ```mermaid
 flowchart TD
-    A[Sender<br/>Package message<br/>sender:receiver:message] --> B[Encrypt with AES-256-CBC]
+    A[Sender package message] --> B[Encrypt with AES-256-CBC]
     B --> C[Send encrypted message to Server]
-    C --> D[Server decrypts<br/>extracts sender & receiver]
-    D --> E[Server looks up socket<br/>name_to_fd]
+    C --> D[Server decrypts to extracts sender and receiver]
+    D --> E[Server looks up receiver socket]
     E --> F[Server re-encrypts message]
     F --> G[Forward encrypted message to Receiver]
-    G --> H[Receiver decrypts and unpacks<br/>message content]
+    G --> H[Receiver decrypts and unpacks message content]
 
     %% Sender nodes
     style A fill:#3b82f6,stroke:#1e40af,stroke-width:2px,color:#fff
